@@ -11,6 +11,12 @@ const updateSchema = z.object({
   description: z.string().max(2000).optional(),
 });
 
+const listQuerySchema = z.object({
+  tagId: z.string().min(1).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+});
+
 export const sessionsRouter = Router();
 
 sessionsRouter.use(requireAuth);
@@ -24,12 +30,40 @@ sessionsRouter.get("/active", async (req, res) => {
 });
 
 sessionsRouter.get("/", async (req, res) => {
-  const limit = Math.min(Number(req.query.limit) || 50, 200);
+  const parsed = listQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_query", details: parsed.error.flatten() });
+    return;
+  }
+  const { tagId, page, limit } = parsed.data;
+
+  const where = {
+    userId: req.user!.id,
+    endedAt: { not: null },
+    ...(tagId ? { tagId } : {}),
+  };
+
+  if (page !== undefined) {
+    const pageSize = limit ?? 15;
+    const [items, total] = await prisma.$transaction([
+      prisma.trackingSession.findMany({
+        where,
+        orderBy: { startedAt: "desc" },
+        include: { tag: true },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.trackingSession.count({ where }),
+    ]);
+    res.json({ items, total, page, pageSize });
+    return;
+  }
+
   const sessions = await prisma.trackingSession.findMany({
-    where: { userId: req.user!.id, endedAt: { not: null } },
+    where,
     orderBy: { startedAt: "desc" },
     include: { tag: true },
-    take: limit,
+    take: limit ?? 50,
   });
   res.json(sessions);
 });

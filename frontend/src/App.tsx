@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import LoginPage from "./auth/LoginPage";
 import TrackerPage from "./pages/TrackerPage";
+import TagDetailPage from "./pages/TagDetailPage";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -18,6 +19,10 @@ export default function App() {
       <Route
         path="/"
         element={user ? <TrackerPage /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/tags/:tagId"
+        element={user ? <TagDetailPage /> : <Navigate to="/login" replace />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

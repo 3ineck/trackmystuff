@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { Tag } from "../types";
 import { useAuth } from "../auth/AuthContext";
 
@@ -11,6 +12,8 @@ interface Props {
 
 export default function Sidebar({ tags, onNewTag, open, onClose }: Props) {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to log out?")) {
@@ -40,11 +43,27 @@ export default function Sidebar({ tags, onNewTag, open, onClose }: Props) {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={onNewTag}
+          onClick={() => {
+            onClose();
+            navigate("/");
+          }}
           className="w-full rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white"
         >
-          + Track new activity
+          Track new activity
         </motion.button>
+      </div>
+
+      <div className="px-2 pb-2">
+        <button
+          onClick={onNewTag}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-ink transition-colors hover:bg-border"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>Add new tag</span>
+        </button>
       </div>
 
       <div className="px-4 pb-2 text-xs uppercase tracking-wide text-muted">Tags</div>
@@ -52,20 +71,30 @@ export default function Sidebar({ tags, onNewTag, open, onClose }: Props) {
         {tags.length === 0 ? (
           <li className="px-2 py-2 text-sm text-muted">No tags yet.</li>
         ) : (
-          tags.map((t) => (
-            <motion.li
-              key={t.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 rounded-md px-2 py-2 text-sm"
-            >
-              <span
-                className="h-3 w-3 flex-none rounded-full"
-                style={{ background: t.color }}
-              />
-              <span className="truncate">{t.name}</span>
-            </motion.li>
-          ))
+          tags.map((t) => {
+            const isActive = location.pathname === `/tags/${t.id}`;
+            return (
+              <motion.li
+                key={t.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
+                <Link
+                  to={`/tags/${t.id}`}
+                  onClick={onClose}
+                  className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-border ${
+                    isActive ? "bg-border text-ink" : "text-ink"
+                  }`}
+                >
+                  <span
+                    className="h-3 w-3 flex-none rounded-full"
+                    style={{ background: t.color }}
+                  />
+                  <span className="truncate">{t.name}</span>
+                </Link>
+              </motion.li>
+            );
+          })
         )}
       </ul>
 

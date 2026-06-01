@@ -17,3 +17,17 @@ export interface TrackingSession {
   createdAt: string;
   tag: Tag;
 }
+
+export interface TagStats {
+  firstSessionAt: string | null;
+  lastSessionAt: string | null;
+  totalDurationSec: number;
+  sessionCount: number;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}

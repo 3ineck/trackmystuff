@@ -52,6 +52,35 @@ tagsRouter.post("/", async (req, res) => {
   }
 });
 
+tagsRouter.get("/:id/stats", async (req, res) => {
+  const tag = await prisma.tag.findFirst({
+    where: { id: req.params.id, userId: req.user!.id },
+  });
+  if (!tag) {
+    res.status(404).json({ error: "tag_not_found" });
+    return;
+  }
+
+  const agg = await prisma.trackingSession.aggregate({
+    where: {
+      userId: req.user!.id,
+      tagId: tag.id,
+      endedAt: { not: null },
+    },
+    _min: { startedAt: true },
+    _max: { startedAt: true },
+    _sum: { durationSec: true },
+    _count: { _all: true },
+  });
+
+  res.json({
+    firstSessionAt: agg._min.startedAt,
+    lastSessionAt: agg._max.startedAt,
+    totalDurationSec: agg._sum.durationSec ?? 0,
+    sessionCount: agg._count._all,
+  });
+});
+
 tagsRouter.delete("/:id", async (req, res) => {
   const result = await prisma.tag.deleteMany({
     where: { id: req.params.id, userId: req.user!.id },
