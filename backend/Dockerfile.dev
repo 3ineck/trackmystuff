@@ -1,0 +1,19 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install OS-level deps Prisma needs on Alpine
+RUN apk add --no-cache openssl
+
+# Copy package files first for better layer caching
+COPY package.json package-lock.json* ./
+RUN npm install
+
+# Copy prisma schema before generating client
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# Source is mounted as a volume in docker-compose, so no COPY needed for src
+EXPOSE 4000
+
+CMD ["npm", "run", "dev"]

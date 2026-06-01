@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  discordId String   @unique
+  username  String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  tags     Tag[]
+  sessions TrackingSession[]
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String
+  createdAt DateTime @default(now())
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions TrackingSession[]
+
+  @@unique([userId, name])
+}
+
+model TrackingSession {
+  id          String    @id @default(cuid())
+  userId      String
+  tagId       String
+  startedAt   DateTime
+  endedAt     DateTime?
+  durationSec Int?
+  description String?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@index([userId, startedAt])
+}
