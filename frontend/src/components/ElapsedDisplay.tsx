@@ -17,7 +17,7 @@ export default function ElapsedDisplay({ elapsed, frozen }: Props) {
   return (
     <motion.div
       animate={{ opacity: elapsed > 0 ? 1 : 0.4 }}
-      className={`font-mono text-5xl tabular-nums tracking-wider ${
+      className={`font-mono text-4xl tabular-nums tracking-wider sm:text-5xl ${
         frozen ? "text-muted" : "text-ink"
       }`}
     >

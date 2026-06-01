@@ -9,7 +9,7 @@ interface Props {
 
 export default function TagDropdown({ tags, value, onChange, disabled }: Props) {
   return (
-    <div className="w-72">
+    <div className="w-full max-w-xs sm:w-72">
       <label className="block text-xs uppercase tracking-wide text-muted">
         Activity
       </label>

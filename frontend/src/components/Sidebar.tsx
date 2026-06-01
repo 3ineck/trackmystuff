@@ -5,9 +5,11 @@ import { useAuth } from "../auth/AuthContext";
 interface Props {
   tags: Tag[];
   onNewTag: () => void;
+  open: boolean;
+  onClose: () => void;
 }
 
-export default function Sidebar({ tags, onNewTag }: Props) {
+export default function Sidebar({ tags, onNewTag, open, onClose }: Props) {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
@@ -17,7 +19,23 @@ export default function Sidebar({ tags, onNewTag }: Props) {
   };
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-border bg-panel">
+    <aside
+      className={`fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r border-border bg-panel transition-transform duration-300 ease-out md:static md:translate-x-0 ${
+        open ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
+      <div className="flex items-center justify-end p-2 md:hidden">
+        <button
+          onClick={onClose}
+          className="rounded-md p-2 text-muted hover:text-ink"
+          aria-label="Close menu"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="6" y1="6" x2="18" y2="18" />
+            <line x1="6" y1="18" x2="18" y2="6" />
+          </svg>
+        </button>
+      </div>
       <div className="p-4">
         <motion.button
           whileHover={{ scale: 1.02 }}

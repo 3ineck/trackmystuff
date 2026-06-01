@@ -18,6 +18,7 @@ export default function TrackerPage() {
   const [justStopped, setJustStopped] = useState<TrackingSession | null>(null);
   const [busy, setBusy] = useState(false);
   const [showNewTag, setShowNewTag] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     api
@@ -76,11 +77,39 @@ export default function TrackerPage() {
   const buttonDisabled = active ? busy : !canStart;
 
   return (
-    <div className="flex h-full">
-      <Sidebar tags={tags} onNewTag={() => setShowNewTag(true)} />
+    <div className="relative flex h-full">
+      <Sidebar
+        tags={tags}
+        onNewTag={() => {
+          setShowNewTag(true);
+          setSidebarOpen(false);
+        }}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-      <main className="flex flex-1 items-center justify-center">
-        <div className="flex flex-col items-center gap-6">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden
+        />
+      )}
+
+      <main className="relative flex flex-1 items-center justify-center px-4 py-6">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="absolute left-3 top-3 rounded-md border border-border bg-panel p-2 text-ink md:hidden"
+          aria-label="Open menu"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+
+        <div className="flex w-full max-w-md flex-col items-center gap-4 sm:gap-6">
           <TagDropdown
             tags={tags}
             value={selectedTagId}
