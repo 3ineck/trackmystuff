@@ -6,6 +6,7 @@ import TimerButton from "../components/TimerButton";
 import ElapsedDisplay from "../components/ElapsedDisplay";
 import NewTagModal from "../components/NewTagModal";
 import DescriptionForm from "../components/DescriptionForm";
+import NowDisplay from "../components/NowDisplay";
 import { useTags } from "../hooks/useTags";
 import { useElapsed } from "../hooks/useElapsed";
 import { api } from "../api/client";
@@ -110,6 +111,7 @@ export default function TrackerPage() {
         </button>
 
         <div className="flex w-full max-w-md flex-col items-center gap-4 sm:gap-6">
+          <NowDisplay />
           <TagDropdown
             tags={tags}
             value={selectedTagId}
