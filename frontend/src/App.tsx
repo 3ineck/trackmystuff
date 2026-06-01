@@ -3,6 +3,7 @@ import { useAuth } from "./auth/AuthContext";
 import LoginPage from "./auth/LoginPage";
 import TrackerPage from "./pages/TrackerPage";
 import TagDetailPage from "./pages/TagDetailPage";
+import TodosPage from "./pages/TodosPage";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -23,6 +24,14 @@ export default function App() {
       <Route
         path="/tags/:tagId"
         element={user ? <TagDetailPage /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/todos"
+        element={user ? <Navigate to="/todos/current" replace /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/todos/:view"
+        element={user ? <TodosPage /> : <Navigate to="/login" replace />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

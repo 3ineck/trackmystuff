@@ -18,6 +18,23 @@ export function formatDateTime(iso: string): string {
   });
 }
 
+export function formatDueDate(iso: string, hasTime: boolean): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (!hasTime) return date;
+  const time = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return `${date} · ${time}`;
+}
+
+export function isOverdue(iso: string, hasTime: boolean): boolean {
+  const due = new Date(iso);
+  const now = new Date();
+  if (hasTime) return due.getTime() < now.getTime();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+  return dueDay.getTime() < today.getTime();
+}
+
 export function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   const h = Math.floor(seconds / 3600);

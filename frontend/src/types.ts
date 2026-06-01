@@ -31,3 +31,34 @@ export interface Paginated<T> {
   page: number;
   pageSize: number;
 }
+
+export type TodoView = "current" | "archived" | "favorited";
+
+export interface Todo {
+  id: string;
+  title: string;
+  description: string | null;
+  dueAt: string | null;
+  dueHasTime: boolean;
+  favorited: boolean;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TodoInput {
+  title: string;
+  description?: string | null;
+  dueAt?: string | null;
+  dueHasTime?: boolean;
+  favorited?: boolean;
+}
+
+export interface TodoPatch {
+  title?: string;
+  description?: string | null;
+  dueAt?: string | null;
+  dueHasTime?: boolean;
+  favorited?: boolean;
+  archived?: boolean;
+}

@@ -5,6 +5,7 @@ import { env } from "./env";
 import { authRouter } from "./routes/auth.routes";
 import { tagsRouter } from "./routes/tags.routes";
 import { sessionsRouter } from "./routes/sessions.routes";
+import { todosRouter } from "./routes/todos.routes";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRouter);
 app.use("/tags", tagsRouter);
 app.use("/sessions", sessionsRouter);
+app.use("/todos", todosRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("Unhandled error:", err);
