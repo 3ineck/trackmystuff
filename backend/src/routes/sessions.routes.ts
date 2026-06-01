@@ -127,6 +127,17 @@ sessionsRouter.post("/:id/stop", async (req, res) => {
   res.json(updated);
 });
 
+sessionsRouter.delete("/:id", async (req, res) => {
+  const result = await prisma.trackingSession.deleteMany({
+    where: { id: req.params.id, userId: req.user!.id },
+  });
+  if (result.count === 0) {
+    res.status(404).json({ error: "session_not_found" });
+    return;
+  }
+  res.status(204).send();
+});
+
 sessionsRouter.patch("/:id", async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) {

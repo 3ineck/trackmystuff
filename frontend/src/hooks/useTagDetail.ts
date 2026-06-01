@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../api/client";
 import type { Paginated, Tag, TagStats, TrackingSession } from "../types";
 
@@ -14,6 +14,7 @@ interface Result {
   loading: boolean;
   notFound: boolean;
   setPage: (p: number) => void;
+  refresh: () => void;
 }
 
 export function useTagDetail(tagId: string): Result {
@@ -24,6 +25,9 @@ export function useTagDetail(tagId: string): Result {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [version, setVersion] = useState(0);
+
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +63,7 @@ export function useTagDetail(tagId: string): Result {
     return () => {
       cancelled = true;
     };
-  }, [tagId]);
+  }, [tagId, version]);
 
   useEffect(() => {
     if (notFound) return;
@@ -79,7 +83,7 @@ export function useTagDetail(tagId: string): Result {
     return () => {
       cancelled = true;
     };
-  }, [tagId, page, notFound]);
+  }, [tagId, page, notFound, version]);
 
   return {
     tag,
@@ -91,5 +95,6 @@ export function useTagDetail(tagId: string): Result {
     loading,
     notFound,
     setPage,
+    refresh,
   };
 }
