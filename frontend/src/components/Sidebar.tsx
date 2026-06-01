@@ -66,7 +66,39 @@ export default function Sidebar({ tags, onNewTag, open, onClose }: Props) {
         </button>
       </div>
 
-      <div className="px-4 pb-2 text-xs uppercase tracking-wide text-muted">Todos</div>
+      <div className="px-4 pb-2 text-xs uppercase tracking-wide text-muted">Tags</div>
+      <ul className="flex-1 overflow-y-auto px-2">
+        {tags.length === 0 ? (
+          <li className="px-2 py-2 text-sm text-muted">No tags yet.</li>
+        ) : (
+          tags.map((t) => {
+            const isActive = location.pathname === `/tags/${t.id}`;
+            return (
+              <motion.li
+                key={t.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
+                <Link
+                  to={`/tags/${t.id}`}
+                  onClick={onClose}
+                  className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-border ${
+                    isActive ? "bg-border text-ink" : "text-ink"
+                  }`}
+                >
+                  <span
+                    className="h-3 w-3 flex-none rounded-full"
+                    style={{ background: t.color }}
+                  />
+                  <span className="truncate">{t.name}</span>
+                </Link>
+              </motion.li>
+            );
+          })
+        )}
+      </ul>
+
+      <div className="px-4 pb-2 pt-2 text-xs uppercase tracking-wide text-muted">Todos</div>
       <ul className="px-2 pb-2">
         {(
           [
@@ -106,38 +138,6 @@ export default function Sidebar({ tags, onNewTag, open, onClose }: Props) {
             </li>
           );
         })}
-      </ul>
-
-      <div className="px-4 pb-2 text-xs uppercase tracking-wide text-muted">Tags</div>
-      <ul className="flex-1 overflow-y-auto px-2">
-        {tags.length === 0 ? (
-          <li className="px-2 py-2 text-sm text-muted">No tags yet.</li>
-        ) : (
-          tags.map((t) => {
-            const isActive = location.pathname === `/tags/${t.id}`;
-            return (
-              <motion.li
-                key={t.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <Link
-                  to={`/tags/${t.id}`}
-                  onClick={onClose}
-                  className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-border ${
-                    isActive ? "bg-border text-ink" : "text-ink"
-                  }`}
-                >
-                  <span
-                    className="h-3 w-3 flex-none rounded-full"
-                    style={{ background: t.color }}
-                  />
-                  <span className="truncate">{t.name}</span>
-                </Link>
-              </motion.li>
-            );
-          })
-        )}
       </ul>
 
       <div className="mt-auto flex items-center gap-3 border-t border-border px-4 py-4">

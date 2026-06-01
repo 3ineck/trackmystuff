@@ -10,6 +10,14 @@ const createTagSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/, "color must be a hex string like #3b82f6"),
 });
 
+const updateTagSchema = z.object({
+  name: z.string().trim().min(1).max(40).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "color must be a hex string like #3b82f6")
+    .optional(),
+});
+
 export const tagsRouter = Router();
 
 tagsRouter.use(requireAuth);
@@ -79,6 +87,38 @@ tagsRouter.get("/:id/stats", async (req, res) => {
     totalDurationSec: agg._sum.durationSec ?? 0,
     sessionCount: agg._count._all,
   });
+});
+
+tagsRouter.patch("/:id", async (req, res) => {
+  const parsed = updateTagSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+    return;
+  }
+
+  try {
+    const result = await prisma.tag.updateMany({
+      where: { id: req.params.id, userId: req.user!.id },
+      data: parsed.data,
+    });
+    if (result.count === 0) {
+      res.status(404).json({ error: "tag_not_found" });
+      return;
+    }
+    const updated = await prisma.tag.findUnique({ where: { id: req.params.id } });
+    res.json(updated);
+  } catch (err: unknown) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      (err as { code?: string }).code === "P2002"
+    ) {
+      res.status(409).json({ error: "tag_name_taken" });
+      return;
+    }
+    throw err;
+  }
 });
 
 tagsRouter.delete("/:id", async (req, res) => {

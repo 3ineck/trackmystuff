@@ -7,7 +7,7 @@ import NewTagModal from "../components/NewTagModal";
 import EditSessionModal from "../components/EditSessionModal";
 import { AnimatePresence } from "framer-motion";
 import { formatDate, formatDateTime, formatDuration } from "../lib/format";
-import { api } from "../api/client";
+import { api, ApiError } from "../api/client";
 import type { TrackingSession } from "../types";
 
 export default function TagDetailPage() {
@@ -28,8 +28,53 @@ export default function TagDetailPage() {
   const [showNewTag, setShowNewTag] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editing, setEditing] = useState<TrackingSession | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
 
   if (notFound) return <Navigate to="/" replace />;
+
+  const startEditName = () => {
+    if (!tag) return;
+    setNameDraft(tag.name);
+    setNameError(null);
+    setEditingName(true);
+  };
+
+  const cancelEditName = () => {
+    setEditingName(false);
+    setNameError(null);
+  };
+
+  const saveName = async () => {
+    if (!tag) return;
+    const next = nameDraft.trim();
+    if (!next) {
+      setNameError("Name can't be empty");
+      return;
+    }
+    if (next === tag.name) {
+      setEditingName(false);
+      return;
+    }
+    setSavingName(true);
+    setNameError(null);
+    try {
+      await api.patch(`/tags/${tag.id}`, { name: next });
+      setEditingName(false);
+      refresh();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setNameError("You already have a tag with that name.");
+      } else {
+        setNameError("Could not save");
+        console.error("rename tag failed:", err);
+      }
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   const handleDelete = async (s: TrackingSession) => {
     if (!window.confirm("Delete this entry? This cannot be undone.")) return;
@@ -109,10 +154,72 @@ export default function TagDetailPage() {
                 style={{ background: tag.color }}
               />
             )}
-            <h1 className="truncate text-2xl font-semibold sm:text-3xl">
-              {tag?.name ?? (loading ? "Loading…" : "")}
-            </h1>
+            {editingName && tag ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveName();
+                }}
+                className="flex flex-1 items-center gap-2"
+              >
+                <input
+                  autoFocus
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") cancelEditName();
+                  }}
+                  maxLength={40}
+                  className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-2xl font-semibold focus:border-accent focus:outline-none sm:text-3xl"
+                />
+                <button
+                  type="submit"
+                  disabled={savingName || !nameDraft.trim()}
+                  className="rounded-md border border-border bg-panel p-2 text-muted hover:border-accent hover:text-ink disabled:opacity-50"
+                  aria-label="Save name"
+                  title="Save"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEditName}
+                  className="rounded-md border border-border bg-panel p-2 text-muted hover:border-red-500 hover:text-red-400"
+                  aria-label="Cancel"
+                  title="Cancel"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                    <line x1="6" y1="18" x2="18" y2="6" />
+                  </svg>
+                </button>
+              </form>
+            ) : (
+              <>
+                <h1 className="truncate text-2xl font-semibold sm:text-3xl">
+                  {tag?.name ?? (loading ? "Loading…" : "")}
+                </h1>
+                {tag && (
+                  <button
+                    onClick={startEditName}
+                    className="flex-none rounded-md border border-border bg-panel p-2 text-muted hover:border-accent hover:text-ink"
+                    aria-label="Rename tag"
+                    title="Rename"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                )}
+              </>
+            )}
           </div>
+          {nameError && (
+            <p className="mt-2 text-sm text-red-400">{nameError}</p>
+          )}
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatCard

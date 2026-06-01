@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 
 function formatDayName(d: Date): string {
-  return d.toLocaleDateString(undefined, { weekday: "long" });
+  return d.toLocaleDateString("en-US", { weekday: "long" });
 }
 
 function formatDateTime(d: Date): string {
-  const date = d.toLocaleDateString(undefined, {
+  const date = d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  const time = d.toLocaleTimeString(undefined, {
+  const time = d.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
+    hour12: false,
   });
   return `${date} · ${time}`;
 }

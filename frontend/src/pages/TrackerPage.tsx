@@ -7,6 +7,7 @@ import ElapsedDisplay from "../components/ElapsedDisplay";
 import NewTagModal from "../components/NewTagModal";
 import DescriptionForm from "../components/DescriptionForm";
 import NowDisplay from "../components/NowDisplay";
+import FavoritesPanel from "../components/FavoritesPanel";
 import { useTags } from "../hooks/useTags";
 import { useElapsed } from "../hooks/useElapsed";
 import { api } from "../api/client";
@@ -97,7 +98,7 @@ export default function TrackerPage() {
         />
       )}
 
-      <main className="relative flex flex-1 items-center justify-center px-4 py-6">
+      <main className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 py-6">
         <button
           onClick={() => setSidebarOpen(true)}
           className="absolute left-3 top-3 rounded-md border border-border bg-panel p-2 text-ink md:hidden"
@@ -130,6 +131,8 @@ export default function TrackerPage() {
               />
             )}
           </AnimatePresence>
+
+          <FavoritesPanel />
         </div>
       </main>
 
