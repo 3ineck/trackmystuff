@@ -2,8 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install OS-level deps Prisma needs on Alpine
-RUN apk add --no-cache openssl
+# Install OS-level deps: openssl for Prisma, tzdata so TZ=America/... works
+RUN apk add --no-cache openssl tzdata
 
 # Copy package files first for better layer caching
 COPY package.json package-lock.json* ./

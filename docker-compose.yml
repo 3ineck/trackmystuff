@@ -30,6 +30,14 @@ services:
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
       DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_NOTIFICATION_CHANNEL_ID: ${DISCORD_NOTIFICATION_CHANNEL_ID}
+      NOTIFICATION_DISCORD_USER_ID: ${NOTIFICATION_DISCORD_USER_ID}
+      NOTIFICATION_CRON: ${NOTIFICATION_CRON}
+      NOTIFICATION_TZ: ${NOTIFICATION_TZ}
+      # Align the container's system TZ with the scheduler TZ so that
+      # date-fns startOfDay / endOfDay compute the correct "today" window.
+      TZ: ${NOTIFICATION_TZ:-America/Sao_Paulo}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
