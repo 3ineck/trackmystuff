@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { format } from "date-fns";
 import type {
   PlanGroup,
@@ -178,26 +178,24 @@ export default function GroupCard({
         )}
       </ul>
 
-      <AnimatePresence>
-        {showNewItem && (
-          <PlanItemModal
-            mode="create"
-            groupName={group.name}
-            onCreate={handleCreateItem}
-            onClose={() => setShowNewItem(false)}
-          />
-        )}
-        {viewingItem && (
-          <PlanItemModal
-            mode="view"
-            groupName={group.name}
-            item={viewingItem}
-            onUpdate={handleUpdateItem}
-            onDelete={handleDeleteItem}
-            onClose={() => setViewingItemId(null)}
-          />
-        )}
-      </AnimatePresence>
+      {showNewItem && (
+        <PlanItemModal
+          mode="create"
+          groupName={group.name}
+          onCreate={handleCreateItem}
+          onClose={() => setShowNewItem(false)}
+        />
+      )}
+      {viewingItem && (
+        <PlanItemModal
+          mode="view"
+          groupName={group.name}
+          item={viewingItem}
+          onUpdate={handleUpdateItem}
+          onDelete={handleDeleteItem}
+          onClose={() => setViewingItemId(null)}
+        />
+      )}
     </motion.div>
   );
 }

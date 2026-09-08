@@ -95,20 +95,17 @@ export default function EventModal({
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4"
       onClick={onClose}
     >
       <motion.form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 320, damping: 26 }}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.1 }}
         className="my-auto w-full max-w-md rounded-2xl border border-border bg-panel p-6 shadow-2xl"
       >
         <h2 className="text-lg font-semibold">
@@ -239,6 +236,6 @@ export default function EventModal({
           </div>
         </div>
       </motion.form>
-    </motion.div>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { addMonths, addWeeks, format, subMonths, subWeeks } from "date-fns";
 import Sidebar from "../components/Sidebar";
 import NewTagModal from "../components/NewTagModal";
@@ -151,27 +151,25 @@ export default function CalendarPage() {
           />
         )}
 
-        <AnimatePresence>
-          {modal?.mode === "create" && (
-            <EventModal
-              key="create"
-              mode="create"
-              prefill={modal.prefill}
-              onSave={handleSave}
-              onClose={() => setModal(null)}
-            />
-          )}
-          {modal?.mode === "edit" && (
-            <EventModal
-              key={`edit-${modal.event.id}`}
-              mode="edit"
-              initial={modal.event}
-              onSave={handleSave}
-              onDelete={handleDelete}
-              onClose={() => setModal(null)}
-            />
-          )}
-        </AnimatePresence>
+        {modal?.mode === "create" && (
+          <EventModal
+            key="create"
+            mode="create"
+            prefill={modal.prefill}
+            onSave={handleSave}
+            onClose={() => setModal(null)}
+          />
+        )}
+        {modal?.mode === "edit" && (
+          <EventModal
+            key={`edit-${modal.event.id}`}
+            mode="edit"
+            initial={modal.event}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            onClose={() => setModal(null)}
+          />
+        )}
       </main>
     </div>
   );
