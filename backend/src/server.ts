@@ -7,6 +7,8 @@ import { tagsRouter } from "./routes/tags.routes";
 import { sessionsRouter } from "./routes/sessions.routes";
 import { todosRouter } from "./routes/todos.routes";
 import { eventsRouter } from "./routes/events.routes";
+import { planGroupsRouter } from "./routes/planGroups.routes";
+import { planItemsRouter } from "./routes/planItems.routes";
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.use("/tags", tagsRouter);
 app.use("/sessions", sessionsRouter);
 app.use("/todos", todosRouter);
 app.use("/events", eventsRouter);
+app.use("/plan-groups", planGroupsRouter);
+app.use("/plan-items", planItemsRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("Unhandled error:", err);

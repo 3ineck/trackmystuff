@@ -88,3 +88,21 @@ export interface CalendarEventInput {
 }
 
 export type CalendarEventPatch = Partial<CalendarEventInput>;
+
+export interface PlanItem {
+  id: string;
+  groupId: string;
+  title: string;
+  done: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlanGroup {
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  items: PlanItem[];
+}

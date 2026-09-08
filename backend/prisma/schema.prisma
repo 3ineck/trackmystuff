@@ -14,10 +14,11 @@ model User {
   avatarUrl String?
   createdAt DateTime @default(now())
 
-  tags     Tag[]
-  sessions TrackingSession[]
-  todos    Todo[]
-  events   CalendarEvent[]
+  tags       Tag[]
+  sessions   TrackingSession[]
+  todos      Todo[]
+  events     CalendarEvent[]
+  planGroups PlanGroup[]
 }
 
 model Tag {
@@ -81,4 +82,30 @@ model CalendarEvent {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, startsAt])
+}
+
+model PlanGroup {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items PlanItem[]
+
+  @@index([userId, createdAt])
+}
+
+model PlanItem {
+  id        String   @id @default(cuid())
+  groupId   String
+  title     String
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group PlanGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
 }

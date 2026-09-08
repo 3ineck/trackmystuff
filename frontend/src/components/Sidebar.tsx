@@ -161,6 +161,26 @@ export default function Sidebar({ tags, onNewTag, open, onClose }: Props) {
         })}
       </ul>
 
+      <div className="px-4 pb-2 pt-2 text-xs uppercase tracking-wide text-muted">Planning</div>
+      <ul className="px-2 pb-2">
+        <li>
+          <Link
+            to="/planning"
+            onClick={onClose}
+            className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-border ${
+              location.pathname === "/planning" ? "bg-border text-ink" : "text-ink"
+            }`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="4" rx="1" />
+              <rect x="3" y="11" width="18" height="4" rx="1" />
+              <rect x="3" y="18" width="18" height="4" rx="1" />
+            </svg>
+            <span>Planning</span>
+          </Link>
+        </li>
+      </ul>
+
       <div className="mt-auto flex items-center gap-3 border-t border-border px-4 py-4">
         {user?.avatarUrl ? (
           <img src={user.avatarUrl} alt="" className="h-8 w-8 rounded-full" />

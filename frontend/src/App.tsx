@@ -5,6 +5,7 @@ import TrackerPage from "./pages/TrackerPage";
 import TagDetailPage from "./pages/TagDetailPage";
 import TodosPage from "./pages/TodosPage";
 import CalendarPage from "./pages/CalendarPage";
+import PlanningPage from "./pages/PlanningPage";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -37,6 +38,10 @@ export default function App() {
       <Route
         path="/calendar"
         element={user ? <CalendarPage /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/planning"
+        element={user ? <PlanningPage /> : <Navigate to="/login" replace />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
