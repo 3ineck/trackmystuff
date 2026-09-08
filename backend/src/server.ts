@@ -6,6 +6,7 @@ import { authRouter } from "./routes/auth.routes";
 import { tagsRouter } from "./routes/tags.routes";
 import { sessionsRouter } from "./routes/sessions.routes";
 import { todosRouter } from "./routes/todos.routes";
+import { eventsRouter } from "./routes/events.routes";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/auth", authRouter);
 app.use("/tags", tagsRouter);
 app.use("/sessions", sessionsRouter);
 app.use("/todos", todosRouter);
+app.use("/events", eventsRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("Unhandled error:", err);

@@ -62,3 +62,29 @@ export interface TodoPatch {
   favorited?: boolean;
   archived?: boolean;
 }
+
+export type Recurrence = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+
+export interface CalendarEvent {
+  id: string;
+  userId: string;
+  title: string;
+  description: string | null;
+  startsAt: string;
+  durationMinutes: number;
+  recurrence: Recurrence;
+  recurrenceEndsAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CalendarEventInput {
+  title: string;
+  description?: string | null;
+  startsAt: string;
+  durationMinutes: number;
+  recurrence?: Recurrence;
+  recurrenceEndsAt?: string | null;
+}
+
+export type CalendarEventPatch = Partial<CalendarEventInput>;

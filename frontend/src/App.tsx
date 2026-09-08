@@ -4,6 +4,7 @@ import LoginPage from "./auth/LoginPage";
 import TrackerPage from "./pages/TrackerPage";
 import TagDetailPage from "./pages/TagDetailPage";
 import TodosPage from "./pages/TodosPage";
+import CalendarPage from "./pages/CalendarPage";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -32,6 +33,10 @@ export default function App() {
       <Route
         path="/todos/:view"
         element={user ? <TodosPage /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/calendar"
+        element={user ? <CalendarPage /> : <Navigate to="/login" replace />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
