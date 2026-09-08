@@ -7,6 +7,7 @@ import type {
   PlanItemInput,
   PlanItemPatch,
 } from "../../types";
+import { hexToRgba } from "../../lib/planItemColors";
 import PlanItemModal from "./PlanItemModal";
 
 interface Props {
@@ -258,15 +259,6 @@ function ItemRow({ item, onToggle, onOpen }: ItemRowProps) {
   );
 }
 
-function hexToRgba(hex: string, alpha: number): string {
-  const m = /^#([0-9a-f]{6})$/i.exec(hex);
-  if (!m) return hex;
-  const n = parseInt(m[1], 16);
-  const r = (n >> 16) & 0xff;
-  const g = (n >> 8) & 0xff;
-  const b = n & 0xff;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 function formatRange(startsAt: string | null, endsAt: string | null): string | null {
   if (!startsAt && !endsAt) return null;

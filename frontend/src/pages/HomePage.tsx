@@ -15,6 +15,7 @@ import {
   occurrencesByDay,
   type OccurrenceEntry,
 } from "../lib/eventOccurrences";
+import { hexToRgba } from "../lib/planItemColors";
 import type { PlanItem, Todo } from "../types";
 
 interface DatedPlanItem {
@@ -204,24 +205,45 @@ function PlanningCard({ items }: { items: DatedPlanItem[] }) {
         </Link>
       ) : (
         <ul className="max-h-72 space-y-1 overflow-y-auto pr-1">
-          {items.map(({ item, groupName }) => (
-            <li
-              key={item.id}
-              className="flex flex-col gap-0.5 rounded-lg border border-border/60 bg-bg px-3 py-2"
-            >
-              <div className="flex items-center gap-2">
-                <span className="flex-1 truncate text-sm text-ink">
-                  {item.title}
+          {items.map(({ item, groupName }) => {
+            const tint = item.color ? hexToRgba(item.color, 0.18) : null;
+            return (
+              <li
+                key={item.id}
+                className={`flex flex-col gap-0.5 rounded-lg border border-l-2 border-border/60 px-3 py-2 ${
+                  tint ? "" : "bg-bg"
+                }`}
+                style={
+                  tint
+                    ? {
+                        backgroundColor: tint,
+                        borderLeftColor: item.color ?? undefined,
+                      }
+                    : undefined
+                }
+              >
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 truncate text-sm text-ink">
+                    {item.title}
+                  </span>
+                  <span
+                    className="flex-none rounded px-1.5 py-0.5 text-[11px] tabular-nums"
+                    style={{
+                      backgroundColor: item.color
+                        ? hexToRgba(item.color, 0.25)
+                        : undefined,
+                      color: item.color ?? undefined,
+                    }}
+                  >
+                    {formatItemRange(item.startsAt, item.endsAt)}
+                  </span>
+                </div>
+                <span className="truncate text-[11px] text-muted">
+                  {groupName}
                 </span>
-                <span className="flex-none rounded bg-accent/15 px-1.5 py-0.5 text-[11px] tabular-nums text-accent">
-                  {formatItemRange(item.startsAt, item.endsAt)}
-                </span>
-              </div>
-              <span className="truncate text-[11px] text-muted">
-                {groupName}
-              </span>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

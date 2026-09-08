@@ -13,6 +13,15 @@ export interface PlanItemSpan {
   groupName: string;
   isStart: boolean;
   isEnd: boolean;
+  row: number;
+}
+
+interface ItemLayout {
+  item: PlanItem;
+  groupName: string;
+  itemStart: Date;
+  itemEnd: Date;
+  days: Date[];
 }
 
 const dayKey = (d: Date) => format(d, "yyyy-MM-dd");
@@ -22,10 +31,10 @@ export function planItemSpansByDay(
   rangeStart: Date,
   rangeEnd: Date,
 ): Map<string, PlanItemSpan[]> {
-  const map = new Map<string, PlanItemSpan[]>();
   const rs = startOfDay(rangeStart);
   const re = endOfDay(rangeEnd);
 
+  const layouts: ItemLayout[] = [];
   for (const g of groups) {
     for (const item of g.items) {
       if (item.done) continue;
@@ -43,23 +52,45 @@ export function planItemSpansByDay(
         start: startOfDay(spanStart),
         end: startOfDay(spanEnd),
       });
+      layouts.push({ item, groupName: g.name, itemStart, itemEnd, days });
+    }
+  }
 
-      for (const d of days) {
-        const key = dayKey(d);
-        const list = map.get(key) ?? [];
-        list.push({
-          item,
-          groupName: g.name,
-          isStart: d.getTime() === itemStart.getTime(),
-          isEnd: d.getTime() === itemEnd.getTime(),
-        });
-        map.set(key, list);
-      }
+  // Longest first so it claims the bottom row (row 0 → rendered at the bottom
+  // via flex-col-reverse in DayCell). Ties break by earlier start.
+  layouts.sort(
+    (a, b) =>
+      b.days.length - a.days.length ||
+      a.itemStart.getTime() - b.itemStart.getTime(),
+  );
+
+  const usedRowsByDay = new Map<string, Set<number>>();
+  const map = new Map<string, PlanItemSpan[]>();
+  for (const l of layouts) {
+    let row = 0;
+    while (l.days.some((d) => usedRowsByDay.get(dayKey(d))?.has(row))) {
+      row++;
+    }
+    for (const d of l.days) {
+      const key = dayKey(d);
+      const rows = usedRowsByDay.get(key) ?? new Set<number>();
+      rows.add(row);
+      usedRowsByDay.set(key, rows);
+
+      const list = map.get(key) ?? [];
+      list.push({
+        item: l.item,
+        groupName: l.groupName,
+        isStart: d.getTime() === l.itemStart.getTime(),
+        isEnd: d.getTime() === l.itemEnd.getTime(),
+        row,
+      });
+      map.set(key, list);
     }
   }
 
   for (const list of map.values()) {
-    list.sort((a, b) => a.item.id.localeCompare(b.item.id));
+    list.sort((a, b) => a.row - b.row);
   }
   return map;
 }

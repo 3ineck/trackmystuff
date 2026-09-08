@@ -111,7 +111,7 @@ export default function DayCell({
         </ul>
       )}
       {visibleSpans.length > 0 && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0.5 flex flex-col gap-0.5">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0.5 flex flex-col-reverse gap-0.5">
           {visibleSpans.map(({ item, groupName, isStart, isEnd }) => (
             <div
               key={`span-${item.id}`}
