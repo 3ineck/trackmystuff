@@ -10,6 +10,7 @@ import { eventsRouter } from "./routes/events.routes";
 import { planGroupsRouter } from "./routes/planGroups.routes";
 import { planItemsRouter } from "./routes/planItems.routes";
 import { notificationsRouter } from "./routes/notifications.routes";
+import { botRouter } from "./routes/bot.routes";
 import { startNotificationScheduler } from "./notifications/scheduler";
 
 const app = express();
@@ -35,6 +36,7 @@ app.use("/events", eventsRouter);
 app.use("/plan-groups", planGroupsRouter);
 app.use("/plan-items", planItemsRouter);
 app.use("/notifications", notificationsRouter);
+app.use("/bot", botRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("Unhandled error:", err);

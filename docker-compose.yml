@@ -35,6 +35,7 @@ services:
       NOTIFICATION_DISCORD_USER_ID: ${NOTIFICATION_DISCORD_USER_ID}
       NOTIFICATION_CRON: ${NOTIFICATION_CRON}
       NOTIFICATION_TZ: ${NOTIFICATION_TZ}
+      BOT_API_SECRET: ${BOT_API_SECRET}
       # Align the container's system TZ with the scheduler TZ so that
       # date-fns startOfDay / endOfDay compute the correct "today" window.
       TZ: ${NOTIFICATION_TZ:-America/Sao_Paulo}
@@ -67,7 +68,26 @@ services:
     depends_on:
       - backend
 
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    environment:
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID}
+      BOT_API_SECRET: ${BOT_API_SECRET}
+      BACKEND_URL: http://backend:${BACKEND_PORT}
+      TZ: ${NOTIFICATION_TZ:-America/Sao_Paulo}
+    volumes:
+      - ./bot:/app
+      - bot_node_modules:/app/node_modules
+    depends_on:
+      - backend
+
 volumes:
   pgdata:
   backend_node_modules:
   frontend_node_modules:
+  bot_node_modules:

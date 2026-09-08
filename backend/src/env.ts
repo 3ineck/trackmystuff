@@ -25,6 +25,7 @@ const schema = z.object({
     (v) => (v === "" ? undefined : v),
     z.string().default("30 8 * * *"),
   ),
+  BOT_API_SECRET: optional(z.string().min(16)),
 });
 
 const parsed = schema.safeParse(process.env);
