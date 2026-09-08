@@ -1,13 +1,20 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import type { PlanGroup, PlanItem } from "../../types";
+import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
+import type {
+  PlanGroup,
+  PlanItem,
+  PlanItemInput,
+  PlanItemPatch,
+} from "../../types";
+import PlanItemModal from "./PlanItemModal";
 
 interface Props {
   group: PlanGroup;
   onRenameGroup: (id: string, name: string) => Promise<void>;
   onDeleteGroup: (id: string) => Promise<void>;
-  onCreateItem: (groupId: string, title: string) => Promise<void>;
-  onRenameItem: (id: string, title: string) => Promise<void>;
+  onCreateItem: (groupId: string, input: PlanItemInput) => Promise<void>;
+  onUpdateItem: (id: string, patch: PlanItemPatch) => Promise<void>;
   onToggleItem: (id: string, done: boolean) => Promise<void>;
   onDeleteItem: (id: string) => Promise<void>;
 }
@@ -17,14 +24,19 @@ export default function GroupCard({
   onRenameGroup,
   onDeleteGroup,
   onCreateItem,
-  onRenameItem,
+  onUpdateItem,
   onToggleItem,
   onDeleteItem,
 }: Props) {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(group.name);
-  const [newItem, setNewItem] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showNewItem, setShowNewItem] = useState(false);
+  const [viewingItemId, setViewingItemId] = useState<string | null>(null);
+
+  const viewingItem = viewingItemId
+    ? group.items.find((it) => it.id === viewingItemId) ?? null
+    : null;
 
   async function saveName() {
     const next = nameDraft.trim();
@@ -57,17 +69,26 @@ export default function GroupCard({
     }
   }
 
-  async function handleAddItem(e: React.FormEvent) {
-    e.preventDefault();
-    const title = newItem.trim();
-    if (!title || busy) return;
+  async function handleCreateItem(input: PlanItemInput) {
     setBusy(true);
     try {
-      await onCreateItem(group.id, title);
-      setNewItem("");
+      await onCreateItem(group.id, input);
+      setShowNewItem(false);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleUpdateItem(patch: PlanItemPatch) {
+    if (!viewingItem) return;
+    await onUpdateItem(viewingItem.id, patch);
+    setViewingItemId(null);
+  }
+
+  async function handleDeleteItem() {
+    if (!viewingItem) return;
+    await onDeleteItem(viewingItem.id);
+    setViewingItemId(null);
   }
 
   return (
@@ -112,6 +133,19 @@ export default function GroupCard({
         )}
         <button
           type="button"
+          onClick={() => setShowNewItem(true)}
+          disabled={busy}
+          className="flex-none rounded-md p-1.5 text-muted hover:bg-accent/10 hover:text-accent disabled:opacity-50"
+          aria-label="Add item"
+          title="Add item"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+        <button
+          type="button"
           onClick={handleDelete}
           disabled={busy}
           className="flex-none rounded-md p-1.5 text-muted hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
@@ -136,124 +170,109 @@ export default function GroupCard({
             <ItemRow
               key={item.id}
               item={item}
-              onRename={onRenameItem}
               onToggle={onToggleItem}
-              onDelete={onDeleteItem}
+              onOpen={() => setViewingItemId(item.id)}
             />
           ))
         )}
       </ul>
 
-      <form onSubmit={handleAddItem} className="mt-3 flex gap-2">
-        <input
-          value={newItem}
-          onChange={(e) => setNewItem(e.target.value)}
-          maxLength={200}
-          placeholder="Add item…"
-          className="flex-1 rounded-md border border-border bg-bg px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
-        />
-        <button
-          type="submit"
-          disabled={!newItem.trim() || busy}
-          className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
-        >
-          Add
-        </button>
-      </form>
+      <AnimatePresence>
+        {showNewItem && (
+          <PlanItemModal
+            mode="create"
+            groupName={group.name}
+            onCreate={handleCreateItem}
+            onClose={() => setShowNewItem(false)}
+          />
+        )}
+        {viewingItem && (
+          <PlanItemModal
+            mode="view"
+            groupName={group.name}
+            item={viewingItem}
+            onUpdate={handleUpdateItem}
+            onDelete={handleDeleteItem}
+            onClose={() => setViewingItemId(null)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
 
 interface ItemRowProps {
   item: PlanItem;
-  onRename: (id: string, title: string) => Promise<void>;
   onToggle: (id: string, done: boolean) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onOpen: () => void;
 }
 
-function ItemRow({ item, onRename, onToggle, onDelete }: ItemRowProps) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(item.title);
-  const [busy, setBusy] = useState(false);
-
-  async function save() {
-    const next = draft.trim();
-    if (!next || next === item.title) {
-      setDraft(item.title);
-      setEditing(false);
-      return;
-    }
-    setBusy(true);
-    try {
-      await onRename(item.id, next);
-      setEditing(false);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function cancel() {
-    setDraft(item.title);
-    setEditing(false);
-  }
+function ItemRow({ item, onToggle, onOpen }: ItemRowProps) {
+  const dateRange = formatRange(item.startsAt, item.endsAt);
+  const tint = item.color ? hexToRgba(item.color, 0.18) : null;
 
   return (
-    <li className="group flex items-center gap-2 rounded-md px-2 py-1 hover:bg-border/40">
+    <li
+      className={`group flex items-start gap-2 rounded-md border-l-2 px-2 py-1 transition-colors ${
+        tint ? "" : "border-transparent hover:bg-border/40"
+      }`}
+      style={
+        tint
+          ? { backgroundColor: tint, borderLeftColor: item.color ?? undefined }
+          : undefined
+      }
+    >
       <input
         type="checkbox"
         checked={item.done}
         onChange={(e) => onToggle(item.id, e.target.checked)}
-        className="h-4 w-4 accent-accent"
+        onClick={(e) => e.stopPropagation()}
+        className="mt-1 h-4 w-4 accent-accent"
         aria-label={item.done ? "Mark as not done" : "Mark as done"}
       />
-      {editing ? (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            save();
-          }}
-          className="flex-1"
-        >
-          <input
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={save}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") cancel();
-            }}
-            maxLength={200}
-            className="w-full rounded border border-border bg-bg px-2 py-0.5 text-sm focus:border-accent focus:outline-none"
-          />
-        </form>
-      ) : (
-        <button
-          type="button"
-          onClick={() => {
-            setDraft(item.title);
-            setEditing(true);
-          }}
-          className={`flex-1 truncate text-left text-sm ${
-            item.done ? "text-muted line-through" : "text-ink"
-          }`}
-          title="Click to rename"
-        >
-          {item.title}
-        </button>
-      )}
       <button
         type="button"
-        onClick={() => onDelete(item.id)}
-        disabled={busy}
-        className="flex-none rounded p-1 text-muted opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 disabled:opacity-50"
-        aria-label="Delete item"
-        title="Delete item"
+        onClick={onOpen}
+        className="min-w-0 flex-1 text-left"
+        title="View details"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <line x1="6" y1="6" x2="18" y2="18" />
-          <line x1="6" y1="18" x2="18" y2="6" />
-        </svg>
+        <div
+          className={`block w-full truncate text-sm ${
+            item.done ? "text-muted line-through" : "text-ink"
+          }`}
+        >
+          {item.title}
+        </div>
+        {(dateRange || item.description) && (
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted">
+            {dateRange && (
+              <span className="tabular-nums text-accent/80">{dateRange}</span>
+            )}
+            {item.description && (
+              <span className="truncate">{item.description}</span>
+            )}
+          </div>
+        )}
       </button>
     </li>
   );
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function formatRange(startsAt: string | null, endsAt: string | null): string | null {
+  if (!startsAt && !endsAt) return null;
+  const start = startsAt ? format(new Date(startsAt), "MMM d") : null;
+  const end = endsAt ? format(new Date(endsAt), "MMM d") : null;
+  if (start && end) return `${start} – ${end}`;
+  if (start) return `from ${start}`;
+  return `until ${end}`;
 }

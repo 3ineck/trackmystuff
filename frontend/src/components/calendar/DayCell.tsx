@@ -1,23 +1,27 @@
 import { format, isSameMonth, isToday } from "date-fns";
 import type { CalendarEvent, Todo } from "../../types";
 import type { OccurrenceEntry } from "../../lib/eventOccurrences";
+import type { PlanItemSpan } from "../../lib/planItemSpans";
 
 interface Props {
   day: Date;
   cursor: Date;
   entries?: OccurrenceEntry[];
   todos?: Todo[];
+  planSpans?: PlanItemSpan[];
   onClick?: () => void;
   onEventClick?: (event: CalendarEvent) => void;
 }
 
 const MAX_ITEMS = 3;
+const MAX_PLAN_BARS = 3;
 
 export default function DayCell({
   day,
   cursor,
   entries = [],
   todos = [],
+  planSpans = [],
   onClick,
   onEventClick,
 }: Props) {
@@ -30,10 +34,13 @@ export default function DayCell({
   const visibleTodos = todos.slice(0, remainingSlots);
   const overflow = totalItems - visibleEntries.length - visibleTodos.length;
 
+  const visibleSpans = planSpans.slice(0, MAX_PLAN_BARS);
+  const extraSpans = planSpans.length - visibleSpans.length;
+
   return (
     <div
       onClick={onClick}
-      className={`group flex min-h-[80px] cursor-pointer flex-col p-1.5 transition-colors sm:min-h-[110px] sm:p-2 ${
+      className={`group relative flex min-h-[80px] cursor-pointer flex-col p-1.5 pb-3 transition-colors sm:min-h-[110px] sm:p-2 sm:pb-3.5 ${
         inMonth ? "bg-panel hover:bg-border/60" : "bg-bg hover:bg-border/40"
       }`}
     >
@@ -102,6 +109,25 @@ export default function DayCell({
             <li className="px-1 text-[10px] text-muted">+{overflow} more</li>
           )}
         </ul>
+      )}
+      {visibleSpans.length > 0 && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0.5 flex flex-col gap-0.5">
+          {visibleSpans.map(({ item, groupName, isStart, isEnd }) => (
+            <div
+              key={`span-${item.id}`}
+              title={`${item.title} · ${groupName}`}
+              className={`pointer-events-auto -mx-px h-1.5 opacity-80 ${
+                isStart ? "ml-1 rounded-l-full" : ""
+              } ${isEnd ? "mr-1 rounded-r-full" : ""}`}
+              style={{ backgroundColor: item.color ?? "#8b5cf6" }}
+            />
+          ))}
+          {extraSpans > 0 && (
+            <div className="px-1 text-right text-[9px] leading-none text-muted">
+              +{extraSpans}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

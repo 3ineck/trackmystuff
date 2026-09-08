@@ -12,6 +12,7 @@ import EventModal from "../components/calendar/EventModal";
 import { useTags } from "../hooks/useTags";
 import { useEvents } from "../hooks/useEvents";
 import { useTodos } from "../hooks/useTodos";
+import { usePlanGroups } from "../hooks/usePlanGroups";
 import type { CalendarEvent, CalendarEventInput } from "../types";
 
 type ModalState =
@@ -23,6 +24,7 @@ export default function CalendarPage() {
   const { tags, createTag } = useTags();
   const { events, create, update, remove } = useEvents();
   const { todos } = useTodos("current");
+  const { groups: planGroups } = usePlanGroups();
   const datedTodos = todos.filter((t) => t.dueAt !== null);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -124,6 +126,7 @@ export default function CalendarPage() {
               cursor={cursor}
               events={events}
               todos={datedTodos}
+              planGroups={planGroups}
               onDayClick={handleDayClick}
               onEventClick={handleEventClick}
             />

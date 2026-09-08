@@ -15,7 +15,7 @@ export default function PlanningPage() {
     renameGroup,
     deleteGroup,
     createItem,
-    renameItem,
+    updateItem,
     toggleItem,
     deleteItem,
   } = usePlanGroups();
@@ -103,7 +103,7 @@ export default function PlanningPage() {
               No groups yet. Create your first one above.
             </p>
           ) : (
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-6 flex flex-col gap-4">
               <AnimatePresence>
                 {groups.map((g) => (
                   <GroupCard
@@ -112,7 +112,7 @@ export default function PlanningPage() {
                     onRenameGroup={renameGroup}
                     onDeleteGroup={deleteGroup}
                     onCreateItem={createItem}
-                    onRenameItem={renameItem}
+                    onUpdateItem={updateItem}
                     onToggleItem={toggleItem}
                     onDeleteItem={deleteItem}
                   />

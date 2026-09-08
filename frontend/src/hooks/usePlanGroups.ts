@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { PlanGroup, PlanItem } from "../types";
+import type { PlanGroup, PlanItem, PlanItemInput, PlanItemPatch } from "../types";
 
 export function usePlanGroups() {
   const [groups, setGroups] = useState<PlanGroup[]>([]);
@@ -45,27 +45,29 @@ export function usePlanGroups() {
   );
 
   const createItem = useCallback(
-    async (groupId: string, title: string) => {
-      await api.post<PlanItem>("/plan-items", { groupId, title });
+    async (groupId: string, input: PlanItemInput) => {
+      await api.post<PlanItem>("/plan-items", { groupId, ...input });
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const updateItem = useCallback(
+    async (id: string, patch: PlanItemPatch) => {
+      await api.patch<PlanItem>(`/plan-items/${id}`, patch);
       await refresh();
     },
     [refresh],
   );
 
   const renameItem = useCallback(
-    async (id: string, title: string) => {
-      await api.patch<PlanItem>(`/plan-items/${id}`, { title });
-      await refresh();
-    },
-    [refresh],
+    (id: string, title: string) => updateItem(id, { title }),
+    [updateItem],
   );
 
   const toggleItem = useCallback(
-    async (id: string, done: boolean) => {
-      await api.patch<PlanItem>(`/plan-items/${id}`, { done });
-      await refresh();
-    },
-    [refresh],
+    (id: string, done: boolean) => updateItem(id, { done }),
+    [updateItem],
   );
 
   const deleteItem = useCallback(
@@ -84,6 +86,7 @@ export function usePlanGroups() {
     renameGroup,
     deleteGroup,
     createItem,
+    updateItem,
     renameItem,
     toggleItem,
     deleteItem,

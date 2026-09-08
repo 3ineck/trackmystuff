@@ -93,10 +93,24 @@ export interface PlanItem {
   id: string;
   groupId: string;
   title: string;
+  description: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+  color: string | null;
   done: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PlanItemInput {
+  title: string;
+  description?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  color?: string | null;
+}
+
+export type PlanItemPatch = Partial<PlanItemInput> & { done?: boolean };
 
 export interface PlanGroup {
   id: string;

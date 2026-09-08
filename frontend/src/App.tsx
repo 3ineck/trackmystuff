@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import LoginPage from "./auth/LoginPage";
+import HomePage from "./pages/HomePage";
 import TrackerPage from "./pages/TrackerPage";
 import TagDetailPage from "./pages/TagDetailPage";
 import TodosPage from "./pages/TodosPage";
@@ -21,6 +22,10 @@ export default function App() {
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route
         path="/"
+        element={user ? <HomePage /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/track"
         element={user ? <TrackerPage /> : <Navigate to="/login" replace />}
       />
       <Route

@@ -7,14 +7,16 @@ import {
   startOfWeek,
 } from "date-fns";
 import DayCell from "./DayCell";
-import type { CalendarEvent, Todo } from "../../types";
+import type { CalendarEvent, PlanGroup, Todo } from "../../types";
 import { dayKey, occurrencesByDay } from "../../lib/eventOccurrences";
 import { todosByDay } from "../../lib/todoOccurrences";
+import { planItemSpansByDay } from "../../lib/planItemSpans";
 
 interface Props {
   cursor: Date;
   events: CalendarEvent[];
   todos: Todo[];
+  planGroups: PlanGroup[];
   onDayClick: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
 }
@@ -22,7 +24,14 @@ interface Props {
 const WEEKDAY_LONG = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEKDAY_SHORT = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
-export default function MonthView({ cursor, events, todos, onDayClick, onEventClick }: Props) {
+export default function MonthView({
+  cursor,
+  events,
+  todos,
+  planGroups,
+  onDayClick,
+  onEventClick,
+}: Props) {
   const gridStart = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
   const gridEnd = endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
@@ -34,6 +43,10 @@ export default function MonthView({ cursor, events, todos, onDayClick, onEventCl
   const todosByDayMap = useMemo(
     () => todosByDay(todos, gridStart, gridEnd),
     [todos, gridStart.getTime(), gridEnd.getTime()],
+  );
+  const planSpansByDay = useMemo(
+    () => planItemSpansByDay(planGroups, gridStart, gridEnd),
+    [planGroups, gridStart.getTime(), gridEnd.getTime()],
   );
 
   return (
@@ -57,6 +70,7 @@ export default function MonthView({ cursor, events, todos, onDayClick, onEventCl
             cursor={cursor}
             entries={byDay.get(dayKey(day)) ?? []}
             todos={todosByDayMap.get(dayKey(day)) ?? []}
+            planSpans={planSpansByDay.get(dayKey(day)) ?? []}
             onClick={() => onDayClick(day)}
             onEventClick={onEventClick}
           />

@@ -39,13 +39,24 @@ export default function Sidebar({ tags, onNewTag, open, onClose }: Props) {
           </svg>
         </button>
       </div>
-      <div className="p-4">
+      <div className="space-y-2 p-4">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => {
             onClose();
             navigate("/");
+          }}
+          className="w-full rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white"
+        >
+          Home
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            onClose();
+            navigate("/track");
           }}
           className="w-full rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white"
         >
