@@ -81,7 +81,7 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mx-auto w-full max-w-6xl"
+          className="mx-auto flex w-full max-w-6xl flex-1 flex-col"
         >
           <div className="flex items-center gap-2">
             <button
@@ -97,11 +97,11 @@ export default function HomePage() {
             </button>
           </div>
 
-          <div className="mt-4 text-center">
-            <p className="text-sm text-muted sm:text-base">
+          <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <p className="text-2xl text-muted sm:text-4xl">
               Welcome back, <span className="text-ink">{user?.username ?? "friend"}</span>!
             </p>
-            <div className="mt-2">
+            <div className="mt-8">
               <NowDisplay />
             </div>
           </div>

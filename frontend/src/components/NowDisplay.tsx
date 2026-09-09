@@ -4,19 +4,21 @@ function formatDayName(d: Date): string {
   return d.toLocaleDateString("en-US", { weekday: "long" });
 }
 
-function formatDateTime(d: Date): string {
-  const date = d.toLocaleDateString("en-US", {
+function formatDate(d: Date): string {
+  return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  const time = d.toLocaleTimeString("en-US", {
+}
+
+function formatTime(d: Date): string {
+  return d.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
   });
-  return `${date} · ${time}`;
 }
 
 export default function NowDisplay() {
@@ -29,11 +31,14 @@ export default function NowDisplay() {
 
   return (
     <div className="text-center">
-      <div className="text-xl font-semibold capitalize text-ink sm:text-2xl">
+      <div className="text-3xl font-semibold capitalize text-ink sm:text-5xl">
         {formatDayName(now)}
       </div>
-      <div className="mt-1 text-sm tabular-nums text-muted">
-        {formatDateTime(now)}
+      <div className="mt-4 text-6xl font-bold tabular-nums text-ink sm:text-8xl">
+        {formatTime(now)}
+      </div>
+      <div className="mt-3 text-base text-muted sm:text-xl">
+        {formatDate(now)}
       </div>
     </div>
   );
