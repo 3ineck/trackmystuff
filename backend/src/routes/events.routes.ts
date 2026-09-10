@@ -22,6 +22,7 @@ const updateSchema = z.object({
   durationMinutes: z.number().int().min(1).max(MAX_DURATION_MINUTES).optional(),
   recurrence: z.enum(RECURRENCE_VALUES).optional(),
   recurrenceEndsAt: z.string().datetime().nullable().optional(),
+  completed: z.boolean().optional(),
 });
 
 export const eventsRouter = Router();
@@ -75,6 +76,7 @@ eventsRouter.patch("/:id", async (req, res) => {
     data.recurrenceEndsAt =
       parsed.data.recurrenceEndsAt === null ? null : new Date(parsed.data.recurrenceEndsAt);
   }
+  if (parsed.data.completed !== undefined) data.completed = parsed.data.completed;
 
   const result = await prisma.calendarEvent.updateMany({
     where: { id: req.params.id, userId: req.user!.id },

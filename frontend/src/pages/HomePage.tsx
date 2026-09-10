@@ -5,6 +5,8 @@ import { endOfDay, format, startOfDay } from "date-fns";
 import Sidebar from "../components/Sidebar";
 import NewTagModal from "../components/NewTagModal";
 import NowDisplay from "../components/NowDisplay";
+import EventDetailModal from "../components/calendar/EventDetailModal";
+import EventModal from "../components/calendar/EventModal";
 import { useAuth } from "../auth/AuthContext";
 import { useTags } from "../hooks/useTags";
 import { useTodos } from "../hooks/useTodos";
@@ -16,7 +18,12 @@ import {
   type OccurrenceEntry,
 } from "../lib/eventOccurrences";
 import { hexToRgba } from "../lib/planItemColors";
-import type { PlanItem, Todo } from "../types";
+import type { CalendarEvent, CalendarEventInput, PlanItem, Todo } from "../types";
+
+type EventModalState =
+  | { mode: "detail"; eventId: string }
+  | { mode: "edit"; eventId: string }
+  | null;
 
 interface DatedPlanItem {
   item: PlanItem;
@@ -28,11 +35,42 @@ export default function HomePage() {
   const { user } = useAuth();
   const { tags, createTag } = useTags();
   const { todos } = useTodos("current");
-  const { events } = useEvents();
+  const { events, update, remove, toggleComplete } = useEvents();
   const { groups } = usePlanGroups();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNewTag, setShowNewTag] = useState(false);
+  const [eventModal, setEventModal] = useState<EventModalState>(null);
+
+  const modalEvent = eventModal
+    ? events.find((e) => e.id === eventModal.eventId) ?? null
+    : null;
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setEventModal({ mode: "detail", eventId: event.id });
+  };
+
+  const handleToggleComplete = async () => {
+    if (!modalEvent) return;
+    setEventModal(null);
+    try {
+      await toggleComplete(modalEvent.id, !modalEvent.completed);
+    } catch (err) {
+      console.error("toggle event completed failed:", err);
+    }
+  };
+
+  const handleSave = async (input: CalendarEventInput) => {
+    if (eventModal?.mode !== "edit" || !modalEvent) return;
+    await update(modalEvent.id, input);
+    setEventModal(null);
+  };
+
+  const handleDelete = async () => {
+    if (eventModal?.mode !== "edit" || !modalEvent) return;
+    await remove(modalEvent.id);
+    setEventModal(null);
+  };
 
   const todayOccurrences = useMemo(() => {
     const now = new Date();
@@ -108,7 +146,10 @@ export default function HomePage() {
 
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <TodosCard todos={todos} />
-            <TodayEventsCard entries={todayOccurrences} />
+            <TodayEventsCard
+              entries={todayOccurrences}
+              onEventClick={handleEventClick}
+            />
             <PlanningCard items={datedPlanItems} />
           </div>
         </motion.div>
@@ -120,6 +161,28 @@ export default function HomePage() {
               await createTag(name, color);
               setShowNewTag(false);
             }}
+          />
+        )}
+
+        {eventModal?.mode === "detail" && modalEvent && (
+          <EventDetailModal
+            key={`detail-${modalEvent.id}`}
+            event={modalEvent}
+            onEdit={() =>
+              setEventModal({ mode: "edit", eventId: modalEvent.id })
+            }
+            onToggleComplete={handleToggleComplete}
+            onClose={() => setEventModal(null)}
+          />
+        )}
+        {eventModal?.mode === "edit" && modalEvent && (
+          <EventModal
+            key={`edit-${modalEvent.id}`}
+            mode="edit"
+            initial={modalEvent}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            onClose={() => setEventModal(null)}
           />
         )}
       </main>
@@ -258,7 +321,13 @@ function formatItemRange(startsAt: string | null, endsAt: string | null): string
   return `until ${end}`;
 }
 
-function TodayEventsCard({ entries }: { entries: OccurrenceEntry[] }) {
+function TodayEventsCard({
+  entries,
+  onEventClick,
+}: {
+  entries: OccurrenceEntry[];
+  onEventClick: (event: CalendarEvent) => void;
+}) {
   return (
     <section className="rounded-xl border border-border bg-panel p-4">
       <header className="mb-3 flex items-center justify-between">
@@ -281,21 +350,37 @@ function TodayEventsCard({ entries }: { entries: OccurrenceEntry[] }) {
         </Link>
       ) : (
         <ul className="max-h-72 space-y-1 overflow-y-auto pr-1">
-          {entries.map(({ event, occurrenceStart }) => (
-            <li key={`${event.id}-${occurrenceStart.getTime()}`}>
-              <Link
-                to="/calendar"
-                className="flex items-center gap-2 rounded-lg bg-accent/20 px-3 py-2 hover:bg-accent/30"
-              >
-                <span className="flex-none text-xs font-medium tabular-nums text-accent">
-                  {format(occurrenceStart, "HH:mm")}
-                </span>
-                <span className="flex-1 truncate text-sm text-ink">
-                  {event.title}
-                </span>
-              </Link>
-            </li>
-          ))}
+          {entries.map(({ event, occurrenceStart }) => {
+            const done = event.completed;
+            return (
+              <li key={`${event.id}-${occurrenceStart.getTime()}`}>
+                <button
+                  type="button"
+                  onClick={() => onEventClick(event)}
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left ${
+                    done
+                      ? "bg-accent/10 opacity-70 hover:bg-accent/20"
+                      : "bg-accent/20 hover:bg-accent/30"
+                  }`}
+                >
+                  <span
+                    className={`flex-none text-xs font-medium tabular-nums ${
+                      done ? "text-muted" : "text-accent"
+                    }`}
+                  >
+                    {format(occurrenceStart, "HH:mm")}
+                  </span>
+                  <span
+                    className={`flex-1 truncate text-sm ${
+                      done ? "text-muted line-through" : "text-ink"
+                    }`}
+                  >
+                    {event.title}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

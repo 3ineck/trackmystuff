@@ -76,6 +76,7 @@ model CalendarEvent {
   durationMinutes  Int
   recurrence       String    @default("NONE")
   recurrenceEndsAt DateTime?
+  completed        Boolean   @default(false)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

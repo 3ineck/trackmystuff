@@ -67,10 +67,12 @@ export default function DayCell({
                   e.stopPropagation();
                   onEventClick?.(event);
                 }}
-                className="flex w-full items-center gap-1 truncate rounded bg-accent/20 px-1 py-0.5 text-left text-[11px] text-ink hover:bg-accent/30 sm:text-xs"
+                className={`flex w-full items-center gap-1 truncate rounded bg-accent/20 px-1 py-0.5 text-left text-[11px] hover:bg-accent/30 sm:text-xs ${
+                  event.completed ? "text-muted line-through opacity-60" : "text-ink"
+                }`}
                 title={event.title}
               >
-                <span className="hidden text-[10px] font-medium text-accent sm:inline">
+                <span className={`hidden text-[10px] font-medium sm:inline ${event.completed ? "text-muted" : "text-accent"}`}>
                   {format(occurrenceStart, "HH:mm")}
                 </span>
                 <span className="truncate">{event.title}</span>

@@ -155,7 +155,11 @@ export default function WeekView({
                         e.stopPropagation();
                         onEventClick(event);
                       }}
-                      className="absolute left-1 right-1 z-10 flex flex-col items-start overflow-hidden rounded border border-accent bg-accent/25 px-1 py-0.5 text-left text-[11px] text-ink hover:bg-accent/40"
+                      className={`absolute left-1 right-1 z-10 flex flex-col items-start overflow-hidden rounded border px-1 py-0.5 text-left text-[11px] ${
+                        event.completed
+                          ? "border-accent/40 bg-accent/10 text-muted line-through opacity-70 hover:bg-accent/20"
+                          : "border-accent bg-accent/25 text-ink hover:bg-accent/40"
+                      }`}
                       style={{ top: `${top}px`, height: `${height}px` }}
                       title={event.title}
                     >

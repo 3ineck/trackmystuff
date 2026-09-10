@@ -9,6 +9,7 @@ import CalendarHeader, {
 import MonthView from "../components/calendar/MonthView";
 import WeekView from "../components/calendar/WeekView";
 import EventModal from "../components/calendar/EventModal";
+import EventDetailModal from "../components/calendar/EventDetailModal";
 import { useTags } from "../hooks/useTags";
 import { useEvents } from "../hooks/useEvents";
 import { useTodos } from "../hooks/useTodos";
@@ -17,12 +18,13 @@ import type { CalendarEvent, CalendarEventInput } from "../types";
 
 type ModalState =
   | { mode: "create"; prefill: { date: Date; time?: string } }
-  | { mode: "edit"; event: CalendarEvent }
+  | { mode: "edit"; eventId: string }
+  | { mode: "detail"; eventId: string }
   | null;
 
 export default function CalendarPage() {
   const { tags, createTag } = useTags();
-  const { events, create, update, remove } = useEvents();
+  const { events, create, update, remove, toggleComplete } = useEvents();
   const { todos } = useTodos("current");
   const { groups: planGroups } = usePlanGroups();
   const datedTodos = todos.filter((t) => t.dueAt !== null);
@@ -51,12 +53,27 @@ export default function CalendarPage() {
     });
   };
   const handleEventClick = (event: CalendarEvent) => {
-    setModal({ mode: "edit", event });
+    setModal({ mode: "detail", eventId: event.id });
+  };
+
+  const modalEvent =
+    modal && (modal.mode === "detail" || modal.mode === "edit")
+      ? events.find((e) => e.id === modal.eventId) ?? null
+      : null;
+
+  const handleToggleComplete = async () => {
+    if (!modalEvent) return;
+    setModal(null);
+    try {
+      await toggleComplete(modalEvent.id, !modalEvent.completed);
+    } catch (err) {
+      console.error("toggle event completed failed:", err);
+    }
   };
 
   const handleSave = async (input: CalendarEventInput) => {
-    if (modal?.mode === "edit") {
-      await update(modal.event.id, input);
+    if (modal?.mode === "edit" && modalEvent) {
+      await update(modalEvent.id, input);
     } else {
       await create(input);
     }
@@ -64,8 +81,8 @@ export default function CalendarPage() {
   };
 
   const handleDelete = async () => {
-    if (modal?.mode !== "edit") return;
-    await remove(modal.event.id);
+    if (modal?.mode !== "edit" || !modalEvent) return;
+    await remove(modalEvent.id);
     setModal(null);
   };
 
@@ -151,6 +168,15 @@ export default function CalendarPage() {
           />
         )}
 
+        {modal?.mode === "detail" && modalEvent && (
+          <EventDetailModal
+            key={`detail-${modalEvent.id}`}
+            event={modalEvent}
+            onEdit={() => setModal({ mode: "edit", eventId: modalEvent.id })}
+            onToggleComplete={handleToggleComplete}
+            onClose={() => setModal(null)}
+          />
+        )}
         {modal?.mode === "create" && (
           <EventModal
             key="create"
@@ -160,11 +186,11 @@ export default function CalendarPage() {
             onClose={() => setModal(null)}
           />
         )}
-        {modal?.mode === "edit" && (
+        {modal?.mode === "edit" && modalEvent && (
           <EventModal
-            key={`edit-${modal.event.id}`}
+            key={`edit-${modalEvent.id}`}
             mode="edit"
-            initial={modal.event}
+            initial={modalEvent}
             onSave={handleSave}
             onDelete={handleDelete}
             onClose={() => setModal(null)}

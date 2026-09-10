@@ -46,5 +46,20 @@ export function useEvents() {
     [refresh],
   );
 
-  return { events, loading, refresh, create, update, remove };
+  const toggleComplete = useCallback(
+    async (id: string, completed: boolean) => {
+      setEvents((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, completed } : e)),
+      );
+      try {
+        await api.patch<CalendarEvent>(`/events/${id}`, { completed });
+      } catch (err) {
+        await refresh();
+        throw err;
+      }
+    },
+    [refresh],
+  );
+
+  return { events, loading, refresh, create, update, remove, toggleComplete };
 }

@@ -74,6 +74,7 @@ export interface CalendarEvent {
   durationMinutes: number;
   recurrence: Recurrence;
   recurrenceEndsAt: string | null;
+  completed: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,7 +88,9 @@ export interface CalendarEventInput {
   recurrenceEndsAt?: string | null;
 }
 
-export type CalendarEventPatch = Partial<CalendarEventInput>;
+export type CalendarEventPatch = Partial<CalendarEventInput> & {
+  completed?: boolean;
+};
 
 export interface PlanItem {
   id: string;
