@@ -7,8 +7,17 @@ const startSchema = z.object({
   tagId: z.string().min(1),
 });
 
+const manualSchema = z.object({
+  tagId: z.string().min(1),
+  startedAt: z.string().datetime(),
+  endedAt: z.string().datetime(),
+  description: z.string().max(2000).optional().nullable(),
+});
+
 const updateSchema = z.object({
-  description: z.string().max(2000).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  startedAt: z.string().datetime().optional(),
+  endedAt: z.string().datetime().optional(),
 });
 
 const listQuerySchema = z.object({
@@ -66,6 +75,43 @@ sessionsRouter.get("/", async (req, res) => {
     take: limit ?? 50,
   });
   res.json(sessions);
+});
+
+sessionsRouter.post("/", async (req, res) => {
+  const parsed = manualSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+    return;
+  }
+  const { tagId, description } = parsed.data;
+  const startedAt = new Date(parsed.data.startedAt);
+  const endedAt = new Date(parsed.data.endedAt);
+  if (endedAt.getTime() <= startedAt.getTime()) {
+    res.status(400).json({ error: "invalid_time_range" });
+    return;
+  }
+
+  const tag = await prisma.tag.findFirst({
+    where: { id: tagId, userId: req.user!.id },
+  });
+  if (!tag) {
+    res.status(404).json({ error: "tag_not_found" });
+    return;
+  }
+
+  const durationSec = Math.round((endedAt.getTime() - startedAt.getTime()) / 1000);
+  const session = await prisma.trackingSession.create({
+    data: {
+      userId: req.user!.id,
+      tagId,
+      startedAt,
+      endedAt,
+      durationSec,
+      description: description ?? null,
+    },
+    include: { tag: true },
+  });
+  res.status(201).json(session);
 });
 
 sessionsRouter.post("/start", async (req, res) => {
@@ -145,16 +191,47 @@ sessionsRouter.patch("/:id", async (req, res) => {
     return;
   }
 
-  const result = await prisma.trackingSession.updateMany({
+  const existing = await prisma.trackingSession.findFirst({
     where: { id: req.params.id, userId: req.user!.id },
-    data: { description: parsed.data.description ?? null },
   });
-  if (result.count === 0) {
+  if (!existing) {
     res.status(404).json({ error: "session_not_found" });
     return;
   }
-  const updated = await prisma.trackingSession.findUnique({
-    where: { id: req.params.id },
+
+  const data: {
+    description?: string | null;
+    startedAt?: Date;
+    endedAt?: Date;
+    durationSec?: number;
+  } = {};
+
+  if (parsed.data.description !== undefined) {
+    data.description = parsed.data.description ?? null;
+  }
+
+  const startedAt = parsed.data.startedAt ? new Date(parsed.data.startedAt) : undefined;
+  const endedAt = parsed.data.endedAt ? new Date(parsed.data.endedAt) : undefined;
+
+  if (startedAt || endedAt) {
+    if (!existing.endedAt) {
+      res.status(409).json({ error: "session_active" });
+      return;
+    }
+    const nextStart = startedAt ?? existing.startedAt;
+    const nextEnd = endedAt ?? existing.endedAt;
+    if (nextEnd.getTime() <= nextStart.getTime()) {
+      res.status(400).json({ error: "invalid_time_range" });
+      return;
+    }
+    if (startedAt) data.startedAt = startedAt;
+    if (endedAt) data.endedAt = endedAt;
+    data.durationSec = Math.round((nextEnd.getTime() - nextStart.getTime()) / 1000);
+  }
+
+  const updated = await prisma.trackingSession.update({
+    where: { id: existing.id },
+    data,
     include: { tag: true },
   });
   res.json(updated);

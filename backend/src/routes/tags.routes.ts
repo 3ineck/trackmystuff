@@ -122,12 +122,19 @@ tagsRouter.patch("/:id", async (req, res) => {
 });
 
 tagsRouter.delete("/:id", async (req, res) => {
-  const result = await prisma.tag.deleteMany({
+  const tag = await prisma.tag.findFirst({
     where: { id: req.params.id, userId: req.user!.id },
   });
-  if (result.count === 0) {
+  if (!tag) {
     res.status(404).json({ error: "tag_not_found" });
     return;
   }
+
+  await prisma.$transaction([
+    prisma.trackingSession.deleteMany({
+      where: { userId: req.user!.id, tagId: tag.id },
+    }),
+    prisma.tag.delete({ where: { id: tag.id } }),
+  ]);
   res.status(204).send();
 });

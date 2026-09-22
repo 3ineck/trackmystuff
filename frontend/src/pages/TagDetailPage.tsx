@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTags } from "../hooks/useTags";
 import { useTagDetail } from "../hooks/useTagDetail";
 import Sidebar from "../components/Sidebar";
 import NewTagModal from "../components/NewTagModal";
-import EditSessionModal from "../components/EditSessionModal";
+import EditSessionModal, {
+  type SessionFormValues,
+} from "../components/EditSessionModal";
 import { AnimatePresence } from "framer-motion";
 import { formatDate, formatDateTime, formatDuration } from "../lib/format";
 import { api, ApiError } from "../api/client";
@@ -12,7 +14,8 @@ import type { TrackingSession } from "../types";
 
 export default function TagDetailPage() {
   const { tagId = "" } = useParams<{ tagId: string }>();
-  const { tags, createTag } = useTags();
+  const navigate = useNavigate();
+  const { tags, createTag, deleteTag } = useTags();
   const {
     tag,
     stats,
@@ -28,10 +31,12 @@ export default function TagDetailPage() {
   const [showNewTag, setShowNewTag] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editing, setEditing] = useState<TrackingSession | null>(null);
+  const [creating, setCreating] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
   const [savingName, setSavingName] = useState(false);
+  const [deletingTag, setDeletingTag] = useState(false);
 
   if (notFound) return <Navigate to="/" replace />;
 
@@ -86,14 +91,35 @@ export default function TagDetailPage() {
     }
   };
 
-  const handleSaveDescription = async (description: string) => {
+  const handleSaveEdit = async (values: SessionFormValues) => {
     if (!editing) return;
+    await api.patch(`/sessions/${editing.id}`, values);
+    setEditing(null);
+    refresh();
+  };
+
+  const handleCreate = async (values: SessionFormValues) => {
+    if (!tag) return;
+    await api.post("/sessions", { tagId: tag.id, ...values });
+    setCreating(false);
+    refresh();
+  };
+
+  const handleDeleteTag = async () => {
+    if (!tag) return;
+    const count = stats?.sessionCount ?? 0;
+    const message =
+      count > 0
+        ? `Delete "${tag.name}" and its ${count} entr${count === 1 ? "y" : "ies"}? This cannot be undone.`
+        : `Delete "${tag.name}"? This cannot be undone.`;
+    if (!window.confirm(message)) return;
+    setDeletingTag(true);
     try {
-      await api.patch(`/sessions/${editing.id}`, { description });
-      setEditing(null);
-      refresh();
+      await deleteTag(tag.id);
+      navigate("/", { replace: true });
     } catch (err) {
-      console.error("update session failed:", err);
+      console.error("delete tag failed:", err);
+      setDeletingTag(false);
     }
   };
 
@@ -202,17 +228,34 @@ export default function TagDetailPage() {
                   {tag?.name ?? (loading ? "Loading…" : "")}
                 </h1>
                 {tag && (
-                  <button
-                    onClick={startEditName}
-                    className="flex-none rounded-md border border-border bg-panel p-2 text-muted hover:border-accent hover:text-ink"
-                    aria-label="Rename tag"
-                    title="Rename"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" />
-                    </svg>
-                  </button>
+                  <>
+                    <button
+                      onClick={startEditName}
+                      className="flex-none rounded-md border border-border bg-panel p-2 text-muted hover:border-accent hover:text-ink"
+                      aria-label="Rename tag"
+                      title="Rename"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={handleDeleteTag}
+                      disabled={deletingTag}
+                      className="flex-none rounded-md border border-border bg-panel p-2 text-muted hover:border-red-500 hover:text-red-400 disabled:opacity-50"
+                      aria-label="Delete tag"
+                      title="Delete tag"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                      </svg>
+                    </button>
+                  </>
                 )}
               </>
             )}
@@ -236,7 +279,24 @@ export default function TagDetailPage() {
             />
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-xl border border-border bg-panel">
+          <div className="mt-8 flex items-center justify-between">
+            <h2 className="text-sm font-medium uppercase tracking-wide text-muted">
+              Entries
+            </h2>
+            <button
+              onClick={() => setCreating(true)}
+              disabled={!tag}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-panel px-3 py-2 text-sm font-medium text-ink transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              New entry
+            </button>
+          </div>
+
+          <div className="mt-3 overflow-hidden rounded-xl border border-border bg-panel">
             <div className="hidden grid-cols-[1fr_110px_2fr_88px] gap-4 border-b border-border px-4 py-2 text-xs uppercase tracking-wide text-muted sm:grid">
               <div>Date</div>
               <div>Duration</div>
@@ -331,9 +391,29 @@ export default function TagDetailPage() {
         {editing && (
           <EditSessionModal
             key={editing.id}
-            session={editing}
-            onSave={handleSaveDescription}
+            title="Edit entry"
+            submitLabel="Save"
+            initial={{
+              startedAt: editing.startedAt,
+              endedAt: editing.endedAt,
+              description: editing.description,
+            }}
+            onSave={handleSaveEdit}
             onClose={() => setEditing(null)}
+          />
+        )}
+        {creating && tag && (
+          <EditSessionModal
+            key="new-entry"
+            title="New manual entry"
+            submitLabel="Create"
+            initial={{
+              startedAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+              endedAt: new Date().toISOString(),
+              description: null,
+            }}
+            onSave={handleCreate}
+            onClose={() => setCreating(false)}
           />
         )}
       </AnimatePresence>
