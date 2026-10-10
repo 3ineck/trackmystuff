@@ -82,6 +82,14 @@ export function expandOccurrences(
 
 const dayKey = (d: Date) => format(d, "yyyy-MM-dd");
 
+export function isOccurrenceCompleted(
+  event: CalendarEvent,
+  occurrenceStart: Date,
+): boolean {
+  if (event.recurrence === "NONE") return event.completed;
+  return event.completedOccurrences.includes(dayKey(occurrenceStart));
+}
+
 export interface OccurrenceEntry {
   event: CalendarEvent;
   occurrenceStart: Date;

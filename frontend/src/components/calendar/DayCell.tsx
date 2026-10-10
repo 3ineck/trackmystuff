@@ -1,6 +1,6 @@
 import { format, isSameMonth, isToday } from "date-fns";
 import type { CalendarEvent, Todo } from "../../types";
-import type { OccurrenceEntry } from "../../lib/eventOccurrences";
+import { isOccurrenceCompleted, type OccurrenceEntry } from "../../lib/eventOccurrences";
 import type { PlanItemSpan } from "../../lib/planItemSpans";
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   todos?: Todo[];
   planSpans?: PlanItemSpan[];
   onClick?: () => void;
-  onEventClick?: (event: CalendarEvent) => void;
+  onEventClick?: (event: CalendarEvent, occurrenceStart: Date) => void;
 }
 
 const MAX_ITEMS = 3;
@@ -59,26 +59,29 @@ export default function DayCell({
       </div>
       {(visibleEntries.length > 0 || visibleTodos.length > 0) && (
         <ul className="mt-1 flex flex-col gap-0.5">
-          {visibleEntries.map(({ event, occurrenceStart }) => (
-            <li key={`e-${event.id}-${occurrenceStart.getTime()}`}>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEventClick?.(event);
-                }}
-                className={`flex w-full items-center gap-1 truncate rounded bg-accent/20 px-1 py-0.5 text-left text-[11px] hover:bg-accent/30 sm:text-xs ${
-                  event.completed ? "text-muted line-through opacity-60" : "text-ink"
-                }`}
-                title={event.title}
-              >
-                <span className={`hidden text-[10px] font-medium sm:inline ${event.completed ? "text-muted" : "text-accent"}`}>
-                  {format(occurrenceStart, "HH:mm")}
-                </span>
-                <span className="truncate">{event.title}</span>
-              </button>
-            </li>
-          ))}
+          {visibleEntries.map(({ event, occurrenceStart }) => {
+            const done = isOccurrenceCompleted(event, occurrenceStart);
+            return (
+              <li key={`e-${event.id}-${occurrenceStart.getTime()}`}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEventClick?.(event, occurrenceStart);
+                  }}
+                  className={`flex w-full items-center gap-1 truncate rounded bg-accent/20 px-1 py-0.5 text-left text-[11px] hover:bg-accent/30 sm:text-xs ${
+                    done ? "text-muted line-through opacity-60" : "text-ink"
+                  }`}
+                  title={event.title}
+                >
+                  <span className={`hidden text-[10px] font-medium sm:inline ${done ? "text-muted" : "text-accent"}`}>
+                    {format(occurrenceStart, "HH:mm")}
+                  </span>
+                  <span className="truncate">{event.title}</span>
+                </button>
+              </li>
+            );
+          })}
           {visibleTodos.map((todo) => (
             <li key={`t-${todo.id}`}>
               <div

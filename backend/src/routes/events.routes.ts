@@ -23,6 +23,12 @@ const updateSchema = z.object({
   recurrence: z.enum(RECURRENCE_VALUES).optional(),
   recurrenceEndsAt: z.string().datetime().nullable().optional(),
   completed: z.boolean().optional(),
+  completedOccurrence: z
+    .object({
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      done: z.boolean(),
+    })
+    .optional(),
 });
 
 export const eventsRouter = Router();
@@ -77,6 +83,21 @@ eventsRouter.patch("/:id", async (req, res) => {
       parsed.data.recurrenceEndsAt === null ? null : new Date(parsed.data.recurrenceEndsAt);
   }
   if (parsed.data.completed !== undefined) data.completed = parsed.data.completed;
+
+  if (parsed.data.completedOccurrence !== undefined) {
+    const existing = await prisma.calendarEvent.findFirst({
+      where: { id: req.params.id, userId: req.user!.id },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "event_not_found" });
+      return;
+    }
+    const { date, done } = parsed.data.completedOccurrence;
+    const set = new Set(existing.completedOccurrences);
+    if (done) set.add(date);
+    else set.delete(date);
+    data.completedOccurrences = Array.from(set);
+  }
 
   const result = await prisma.calendarEvent.updateMany({
     where: { id: req.params.id, userId: req.user!.id },

@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import type { CalendarEvent, Recurrence } from "../../types";
+import { isOccurrenceCompleted } from "../../lib/eventOccurrences";
 
 interface Props {
   event: CalendarEvent;
+  occurrenceStart: Date;
   onEdit: () => void;
   onToggleComplete: () => void;
   onClose: () => void;
@@ -26,13 +28,14 @@ function formatDuration(minutes: number): string {
 
 export default function EventDetailModal({
   event,
+  occurrenceStart,
   onEdit,
   onToggleComplete,
   onClose,
 }: Props) {
-  const start = new Date(event.startsAt);
+  const start = new Date(occurrenceStart);
   const end = new Date(start.getTime() + event.durationMinutes * 60_000);
-  const done = event.completed;
+  const done = isOccurrenceCompleted(event, occurrenceStart);
 
   return (
     <div

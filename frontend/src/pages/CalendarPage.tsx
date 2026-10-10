@@ -14,12 +14,13 @@ import { useTags } from "../hooks/useTags";
 import { useEvents } from "../hooks/useEvents";
 import { useTodos } from "../hooks/useTodos";
 import { usePlanGroups } from "../hooks/usePlanGroups";
+import { isOccurrenceCompleted } from "../lib/eventOccurrences";
 import type { CalendarEvent, CalendarEventInput } from "../types";
 
 type ModalState =
   | { mode: "create"; prefill: { date: Date; time?: string } }
   | { mode: "edit"; eventId: string }
-  | { mode: "detail"; eventId: string }
+  | { mode: "detail"; eventId: string; occurrenceStart: string }
   | null;
 
 export default function CalendarPage() {
@@ -52,8 +53,12 @@ export default function CalendarPage() {
       prefill: { date: dateAtHour, time: format(dateAtHour, "HH:mm") },
     });
   };
-  const handleEventClick = (event: CalendarEvent) => {
-    setModal({ mode: "detail", eventId: event.id });
+  const handleEventClick = (event: CalendarEvent, occurrenceStart: Date) => {
+    setModal({
+      mode: "detail",
+      eventId: event.id,
+      occurrenceStart: occurrenceStart.toISOString(),
+    });
   };
 
   const modalEvent =
@@ -62,10 +67,12 @@ export default function CalendarPage() {
       : null;
 
   const handleToggleComplete = async () => {
-    if (!modalEvent) return;
+    if (!modalEvent || modal?.mode !== "detail") return;
+    const occurrenceStart = new Date(modal.occurrenceStart);
+    const nextDone = !isOccurrenceCompleted(modalEvent, occurrenceStart);
     setModal(null);
     try {
-      await toggleComplete(modalEvent.id, !modalEvent.completed);
+      await toggleComplete(modalEvent, occurrenceStart, nextDone);
     } catch (err) {
       console.error("toggle event completed failed:", err);
     }
@@ -170,8 +177,9 @@ export default function CalendarPage() {
 
         {modal?.mode === "detail" && modalEvent && (
           <EventDetailModal
-            key={`detail-${modalEvent.id}`}
+            key={`detail-${modalEvent.id}-${modal.occurrenceStart}`}
             event={modalEvent}
+            occurrenceStart={new Date(modal.occurrenceStart)}
             onEdit={() => setModal({ mode: "edit", eventId: modalEvent.id })}
             onToggleComplete={handleToggleComplete}
             onClose={() => setModal(null)}

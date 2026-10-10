@@ -8,7 +8,11 @@ import {
   startOfWeek,
 } from "date-fns";
 import type { CalendarEvent, Todo } from "../../types";
-import { dayKey, occurrencesByDay } from "../../lib/eventOccurrences";
+import {
+  dayKey,
+  isOccurrenceCompleted,
+  occurrencesByDay,
+} from "../../lib/eventOccurrences";
 import { todosByDay } from "../../lib/todoOccurrences";
 
 interface Props {
@@ -16,7 +20,7 @@ interface Props {
   events: CalendarEvent[];
   todos: Todo[];
   onSlotClick: (dateAtHour: Date) => void;
-  onEventClick: (event: CalendarEvent) => void;
+  onEventClick: (event: CalendarEvent, occurrenceStart: Date) => void;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -147,16 +151,17 @@ export default function WeekView({
                     18,
                     (event.durationMinutes / 1440) * DAY_HEIGHT_PX,
                   );
+                  const done = isOccurrenceCompleted(event, occurrenceStart);
                   return (
                     <button
                       type="button"
                       key={`e-${event.id}-${occurrenceStart.getTime()}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onEventClick(event);
+                        onEventClick(event, occurrenceStart);
                       }}
                       className={`absolute left-1 right-1 z-10 flex flex-col items-start overflow-hidden rounded border px-1 py-0.5 text-left text-[11px] ${
-                        event.completed
+                        done
                           ? "border-accent/40 bg-accent/10 text-muted line-through opacity-70 hover:bg-accent/20"
                           : "border-accent bg-accent/25 text-ink hover:bg-accent/40"
                       }`}

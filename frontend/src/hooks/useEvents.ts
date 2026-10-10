@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { format } from "date-fns";
 import { api } from "../api/client";
 import type { CalendarEvent, CalendarEventInput, CalendarEventPatch } from "../types";
 
@@ -47,12 +48,34 @@ export function useEvents() {
   );
 
   const toggleComplete = useCallback(
-    async (id: string, completed: boolean) => {
+    async (event: CalendarEvent, occurrenceStart: Date, done: boolean) => {
+      if (event.recurrence === "NONE") {
+        setEvents((prev) =>
+          prev.map((e) => (e.id === event.id ? { ...e, completed: done } : e)),
+        );
+        try {
+          await api.patch<CalendarEvent>(`/events/${event.id}`, { completed: done });
+        } catch (err) {
+          await refresh();
+          throw err;
+        }
+        return;
+      }
+
+      const dateKey = format(occurrenceStart, "yyyy-MM-dd");
       setEvents((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, completed } : e)),
+        prev.map((e) => {
+          if (e.id !== event.id) return e;
+          const set = new Set(e.completedOccurrences);
+          if (done) set.add(dateKey);
+          else set.delete(dateKey);
+          return { ...e, completedOccurrences: Array.from(set) };
+        }),
       );
       try {
-        await api.patch<CalendarEvent>(`/events/${id}`, { completed });
+        await api.patch<CalendarEvent>(`/events/${event.id}`, {
+          completedOccurrence: { date: dateKey, done },
+        });
       } catch (err) {
         await refresh();
         throw err;

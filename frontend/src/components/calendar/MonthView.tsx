@@ -18,7 +18,7 @@ interface Props {
   todos: Todo[];
   planGroups: PlanGroup[];
   onDayClick: (date: Date) => void;
-  onEventClick: (event: CalendarEvent) => void;
+  onEventClick: (event: CalendarEvent, occurrenceStart: Date) => void;
 }
 
 const WEEKDAY_LONG = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];

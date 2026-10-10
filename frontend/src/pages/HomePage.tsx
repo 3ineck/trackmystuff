@@ -14,6 +14,7 @@ import { useEvents } from "../hooks/useEvents";
 import { usePlanGroups } from "../hooks/usePlanGroups";
 import {
   dayKey,
+  isOccurrenceCompleted,
   occurrencesByDay,
   type OccurrenceEntry,
 } from "../lib/eventOccurrences";
@@ -21,7 +22,7 @@ import { hexToRgba } from "../lib/planItemColors";
 import type { CalendarEvent, CalendarEventInput, PlanItem, Todo } from "../types";
 
 type EventModalState =
-  | { mode: "detail"; eventId: string }
+  | { mode: "detail"; eventId: string; occurrenceStart: string }
   | { mode: "edit"; eventId: string }
   | null;
 
@@ -46,15 +47,21 @@ export default function HomePage() {
     ? events.find((e) => e.id === eventModal.eventId) ?? null
     : null;
 
-  const handleEventClick = (event: CalendarEvent) => {
-    setEventModal({ mode: "detail", eventId: event.id });
+  const handleEventClick = (event: CalendarEvent, occurrenceStart: Date) => {
+    setEventModal({
+      mode: "detail",
+      eventId: event.id,
+      occurrenceStart: occurrenceStart.toISOString(),
+    });
   };
 
   const handleToggleComplete = async () => {
-    if (!modalEvent) return;
+    if (!modalEvent || eventModal?.mode !== "detail") return;
+    const occurrenceStart = new Date(eventModal.occurrenceStart);
+    const nextDone = !isOccurrenceCompleted(modalEvent, occurrenceStart);
     setEventModal(null);
     try {
-      await toggleComplete(modalEvent.id, !modalEvent.completed);
+      await toggleComplete(modalEvent, occurrenceStart, nextDone);
     } catch (err) {
       console.error("toggle event completed failed:", err);
     }
@@ -166,8 +173,9 @@ export default function HomePage() {
 
         {eventModal?.mode === "detail" && modalEvent && (
           <EventDetailModal
-            key={`detail-${modalEvent.id}`}
+            key={`detail-${modalEvent.id}-${eventModal.occurrenceStart}`}
             event={modalEvent}
+            occurrenceStart={new Date(eventModal.occurrenceStart)}
             onEdit={() =>
               setEventModal({ mode: "edit", eventId: modalEvent.id })
             }
@@ -326,7 +334,7 @@ function TodayEventsCard({
   onEventClick,
 }: {
   entries: OccurrenceEntry[];
-  onEventClick: (event: CalendarEvent) => void;
+  onEventClick: (event: CalendarEvent, occurrenceStart: Date) => void;
 }) {
   return (
     <section className="rounded-xl border border-border bg-panel p-4">
@@ -351,12 +359,12 @@ function TodayEventsCard({
       ) : (
         <ul className="max-h-72 space-y-1 overflow-y-auto pr-1">
           {entries.map(({ event, occurrenceStart }) => {
-            const done = event.completed;
+            const done = isOccurrenceCompleted(event, occurrenceStart);
             return (
               <li key={`${event.id}-${occurrenceStart.getTime()}`}>
                 <button
                   type="button"
-                  onClick={() => onEventClick(event)}
+                  onClick={() => onEventClick(event, occurrenceStart)}
                   className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left ${
                     done
                       ? "bg-accent/10 opacity-70 hover:bg-accent/20"
