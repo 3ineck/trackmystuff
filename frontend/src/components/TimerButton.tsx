@@ -1,13 +1,16 @@
 import { motion } from "framer-motion";
 
+export type TimerButtonState = "idle" | "running" | "paused";
+
 interface Props {
-  running: boolean;
+  state: TimerButtonState;
   disabled?: boolean;
   onClick: () => void;
 }
 
-export default function TimerButton({ running, disabled, onClick }: Props) {
-  const label = running ? "STOP" : "START";
+export default function TimerButton({ state, disabled, onClick }: Props) {
+  const label = state === "running" ? "PAUSE" : state === "paused" ? "RESUME" : "START";
+  const running = state === "running";
 
   return (
     <motion.button

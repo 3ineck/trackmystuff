@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "../components/Sidebar";
 import TagDropdown from "../components/TagDropdown";
 import TimerButton from "../components/TimerButton";
@@ -36,6 +36,8 @@ export default function TrackerPage() {
 
   const elapsed = useElapsed(
     active?.startedAt ?? justStopped?.startedAt ?? null,
+    active?.pausedAt ?? null,
+    active?.pausedSec ?? justStopped?.pausedSec ?? 0,
     justStopped?.endedAt ?? null
   );
 
@@ -44,9 +46,13 @@ export default function TrackerPage() {
     setBusy(true);
     try {
       if (active) {
-        const stopped = await api.post<TrackingSession>(`/sessions/${active.id}/stop`);
-        setActive(null);
-        setJustStopped(stopped);
+        if (active.pausedAt) {
+          const resumed = await api.post<TrackingSession>(`/sessions/${active.id}/resume`);
+          setActive(resumed);
+        } else {
+          const paused = await api.post<TrackingSession>(`/sessions/${active.id}/pause`);
+          setActive(paused);
+        }
       } else {
         if (!selectedTagId) return;
         const started = await api.post<TrackingSession>("/sessions/start", {
@@ -61,6 +67,20 @@ export default function TrackerPage() {
       setBusy(false);
     }
   }, [active, busy, selectedTagId]);
+
+  const onFinish = useCallback(async () => {
+    if (busy || !active) return;
+    setBusy(true);
+    try {
+      const stopped = await api.post<TrackingSession>(`/sessions/${active.id}/stop`);
+      setActive(null);
+      setJustStopped(stopped);
+    } catch (err) {
+      console.error("finish failed:", err);
+    } finally {
+      setBusy(false);
+    }
+  }, [active, busy]);
 
   const onSaveDescription = useCallback(
     async (description: string) => {
@@ -77,6 +97,12 @@ export default function TrackerPage() {
 
   const canStart = !active && !!selectedTagId && !busy;
   const buttonDisabled = active ? busy : !canStart;
+  const timerState: "idle" | "running" | "paused" = active
+    ? active.pausedAt
+      ? "paused"
+      : "running"
+    : "idle";
+  const showFinish = !!active && !!active.pausedAt;
 
   return (
     <div className="relative flex h-full">
@@ -119,8 +145,26 @@ export default function TrackerPage() {
             onChange={setSelectedTagId}
             disabled={!!active}
           />
-          <TimerButton running={!!active} disabled={buttonDisabled} onClick={onToggle} />
-          <ElapsedDisplay elapsed={elapsed} frozen={!!justStopped} />
+          <TimerButton state={timerState} disabled={buttonDisabled} onClick={onToggle} />
+          <AnimatePresence>
+            {showFinish && (
+              <motion.button
+                key="finish"
+                type="button"
+                onClick={onFinish}
+                disabled={busy}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                whileHover={busy ? {} : { scale: 1.03 }}
+                whileTap={busy ? {} : { scale: 0.97 }}
+                className="rounded-full border border-red-500/60 bg-red-500/10 px-6 py-2 text-sm font-semibold tracking-wide text-red-400 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                FINISH
+              </motion.button>
+            )}
+          </AnimatePresence>
+          <ElapsedDisplay elapsed={elapsed} frozen={!!justStopped || !!active?.pausedAt} />
 
           <AnimatePresence>
             {justStopped && (

@@ -161,13 +161,75 @@ sessionsRouter.post("/:id/stop", async (req, res) => {
     return;
   }
   const endedAt = new Date();
+  let pausedSec = session.pausedSec;
+  if (session.pausedAt) {
+    pausedSec += Math.round((endedAt.getTime() - session.pausedAt.getTime()) / 1000);
+  }
   const durationSec = Math.max(
     0,
-    Math.round((endedAt.getTime() - session.startedAt.getTime()) / 1000)
+    Math.round((endedAt.getTime() - session.startedAt.getTime()) / 1000) - pausedSec
   );
   const updated = await prisma.trackingSession.update({
     where: { id: session.id },
-    data: { endedAt, durationSec },
+    data: { endedAt, durationSec, pausedSec, pausedAt: null },
+    include: { tag: true },
+  });
+  res.json(updated);
+});
+
+sessionsRouter.post("/:id/pause", async (req, res) => {
+  const session = await prisma.trackingSession.findFirst({
+    where: { id: req.params.id, userId: req.user!.id },
+  });
+  if (!session) {
+    res.status(404).json({ error: "session_not_found" });
+    return;
+  }
+  if (session.endedAt) {
+    res.status(409).json({ error: "session_already_stopped" });
+    return;
+  }
+  if (session.pausedAt) {
+    const full = await prisma.trackingSession.findUnique({
+      where: { id: session.id },
+      include: { tag: true },
+    });
+    res.json(full);
+    return;
+  }
+  const updated = await prisma.trackingSession.update({
+    where: { id: session.id },
+    data: { pausedAt: new Date() },
+    include: { tag: true },
+  });
+  res.json(updated);
+});
+
+sessionsRouter.post("/:id/resume", async (req, res) => {
+  const session = await prisma.trackingSession.findFirst({
+    where: { id: req.params.id, userId: req.user!.id },
+  });
+  if (!session) {
+    res.status(404).json({ error: "session_not_found" });
+    return;
+  }
+  if (session.endedAt) {
+    res.status(409).json({ error: "session_already_stopped" });
+    return;
+  }
+  if (!session.pausedAt) {
+    const full = await prisma.trackingSession.findUnique({
+      where: { id: session.id },
+      include: { tag: true },
+    });
+    res.json(full);
+    return;
+  }
+  const now = new Date();
+  const addedPaused = Math.round((now.getTime() - session.pausedAt.getTime()) / 1000);
+  const updated = await prisma.trackingSession.update({
+    where: { id: session.id },
+    data: { pausedAt: null, pausedSec: session.pausedSec + addedPaused },
     include: { tag: true },
   });
   res.json(updated);

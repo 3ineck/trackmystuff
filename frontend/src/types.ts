@@ -14,6 +14,8 @@ export interface TrackingSession {
   endedAt: string | null;
   durationSec: number | null;
   description: string | null;
+  pausedAt: string | null;
+  pausedSec: number;
   createdAt: string;
   tag: Tag;
 }
