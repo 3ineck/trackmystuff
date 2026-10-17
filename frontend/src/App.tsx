@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import TrackerPage from "./pages/TrackerPage";
 import TagDetailPage from "./pages/TagDetailPage";
 import TodosPage from "./pages/TodosPage";
+import NotesPage from "./pages/NotesPage";
 import CalendarPage from "./pages/CalendarPage";
 import PlanningPage from "./pages/PlanningPage";
 
@@ -39,6 +40,10 @@ export default function App() {
       <Route
         path="/todos/:view"
         element={user ? <TodosPage /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/notes"
+        element={user ? <NotesPage /> : <Navigate to="/login" replace />}
       />
       <Route
         path="/calendar"

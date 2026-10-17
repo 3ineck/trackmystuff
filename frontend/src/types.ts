@@ -65,6 +65,21 @@ export interface TodoPatch {
   archived?: boolean;
 }
 
+export interface Note {
+  id: string;
+  title: string;
+  content: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoteInput {
+  title: string;
+  content?: string | null;
+}
+
+export type NotePatch = Partial<NoteInput>;
+
 export type Recurrence = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
 export interface CalendarEvent {

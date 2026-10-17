@@ -19,6 +19,7 @@ model User {
   todos      Todo[]
   events     CalendarEvent[]
   planGroups PlanGroup[]
+  notes      Note[]
 }
 
 model Tag {
@@ -99,6 +100,19 @@ model PlanGroup {
   items PlanItem[]
 
   @@index([userId, createdAt])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
 }
 
 model PlanItem {
