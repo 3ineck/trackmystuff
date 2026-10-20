@@ -10,7 +10,7 @@ export default function LoginPage() {
         transition={{ duration: 0.4 }}
         className="w-full max-w-sm rounded-2xl border border-border bg-panel p-8 text-center shadow-xl"
       >
-        <h1 className="text-2xl font-semibold">TrackMyStuff</h1>
+        <h1 className="text-2xl font-semibold">Tempore</h1>
         <p className="mt-2 text-sm text-muted">
           Track how you spend your time. Log in with Discord to begin.
         </p>

@@ -4,7 +4,14 @@ Notes for future Claude sessions working on this repo.
 
 ## What this is
 
-A personal time-tracking web app. Users log in with Discord, create activity tags (Work, Studying, ...), then start/stop a timer for each session. Sessions store user, tag, start time, end time, duration, and a description.
+Tempore — a personal productivity web app that started as a time tracker and grew into a full daily organizer. Users log in with Discord and get:
+
+- **Timer / sessions** — tagged time tracking with pause/resume, manual entries, and per-session descriptions.
+- **Calendar** — events with recurrence (and per-occurrence completion for recurring ones).
+- **Todos** — tasks with optional due date/time, favorites, and archive.
+- **Notes** — lightweight note-taking (title + content).
+- **Planning** — plan groups containing plan items with optional date ranges.
+- **Discord bot** — slash commands + a daily cron summary of today's events, timed todos, and dated plan items posted to a channel.
 
 ## Stack and why
 

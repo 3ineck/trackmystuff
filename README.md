@@ -1,14 +1,24 @@
-# TrackMyStuff
+# Tempore
 
-A web app to track how you spend your time. Log in with Discord, pick an activity tag (Work, Studying, Side project, ...), hit START, hit STOP, add a description. Everything is saved to PostgreSQL so you can review your sessions later.
+A personal productivity web app: time tracking, calendar, todos, notes, and planning in one place. Log in with Discord, then:
+
+- Start/pause/stop tagged timers to track how you spend your time.
+- Add calendar events (with recurrence) and mark occurrences complete.
+- Keep a todo list with due dates, favorites, and an archive.
+- Jot down quick notes.
+- Group plan items into plan groups with optional date ranges.
+- Opt in to a Discord bot that posts a daily summary of today's events, timed todos, and dated plan items — and exposes slash commands for the same.
+
+Everything is saved to PostgreSQL.
 
 ## Stack
 
 - **Frontend**: Vite + React + TypeScript + Tailwind CSS + Framer Motion
 - **Backend**: Node + TypeScript + Express + Prisma
+- **Bot**: Node + TypeScript + discord.js (slash commands + daily notification cron)
 - **Database**: PostgreSQL 16
 - **Auth**: Discord OAuth2
-- **Local dev**: Docker Compose (three services: `db`, `backend`, `frontend`)
+- **Local dev**: Docker Compose (four services: `db`, `backend`, `frontend`, `bot`)
 
 ## Prerequisites
 
@@ -27,7 +37,7 @@ A web app to track how you spend your time. Log in with Discord, pick an activit
 
 ```bash
 git clone <this-repo>
-cd trackmystuff
+cd tempore
 cp .env.example .env
 # Open .env and fill in DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, and a strong SESSION_SECRET
 docker compose up --build
@@ -38,11 +48,12 @@ Then open <http://localhost:5173>.
 ## Project structure
 
 ```
-trackmystuff/
+tempore/
 ├── docker-compose.yml
 ├── .env.example
 ├── frontend/    Vite + React + Tailwind + Framer Motion
-└── backend/     Express + Prisma, /auth /tags /sessions
+├── backend/     Express + Prisma, /auth /tags /sessions /todos /events /notes /planGroups /planItems /notifications /bot
+└── bot/         discord.js slash-command bot + daily notification cron
 ```
 
 ## Common commands
