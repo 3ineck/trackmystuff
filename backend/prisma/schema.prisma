@@ -13,6 +13,8 @@ model User {
   username  String
   avatarUrl String?
   createdAt DateTime @default(now())
+  // Bumped on logout; tokens carrying an older version are rejected.
+  sessionVersion Int @default(0)
 
   tags       Tag[]
   sessions   TrackingSession[]

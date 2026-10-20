@@ -7,26 +7,31 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface SessionPayload {
   userId: string;
+  // Must match User.sessionVersion; bumping it revokes every issued token.
+  ver: number;
 }
 
-export function signSession(userId: string): string {
-  return jwt.sign({ userId } satisfies SessionPayload, env.SESSION_SECRET, {
+export function signSession(userId: string, ver: number): string {
+  return jwt.sign({ userId, ver } satisfies SessionPayload, env.SESSION_SECRET, {
+    algorithm: "HS256",
     expiresIn: "7d",
   });
 }
 
 export function verifySession(token: string): SessionPayload | null {
   try {
-    const decoded = jwt.verify(token, env.SESSION_SECRET) as SessionPayload;
-    if (!decoded.userId) return null;
-    return decoded;
+    const decoded = jwt.verify(token, env.SESSION_SECRET, {
+      algorithms: ["HS256"],
+    }) as Partial<SessionPayload>;
+    if (typeof decoded.userId !== "string" || typeof decoded.ver !== "number") return null;
+    return { userId: decoded.userId, ver: decoded.ver };
   } catch {
     return null;
   }
 }
 
-export function setSessionCookie(res: Response, userId: string): void {
-  const token = signSession(userId);
+export function setSessionCookie(res: Response, userId: string, ver: number): void {
+  const token = signSession(userId, ver);
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",

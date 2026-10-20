@@ -1,0 +1,83 @@
+# Production stack (VPS). Run with:
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Images are built from source (no volume mounts, no dev servers).
+# The host nginx (deploy/nginx/tempore.tech.conf) terminates TLS and proxies
+# to the ports below, which are bound to localhost only.
+# No `name:` on purpose: the project name stays the directory name, so this
+# reuses the dev stack's pgdata volume and replaces its containers.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      BACKEND_PORT: ${BACKEND_PORT}
+      NODE_ENV: production
+      SESSION_SECRET: ${SESSION_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_NOTIFICATION_CHANNEL_ID: ${DISCORD_NOTIFICATION_CHANNEL_ID}
+      NOTIFICATION_DISCORD_USER_ID: ${NOTIFICATION_DISCORD_USER_ID}
+      NOTIFICATION_CRON: ${NOTIFICATION_CRON}
+      NOTIFICATION_TZ: ${NOTIFICATION_TZ}
+      BOT_API_SECRET: ${BOT_API_SECRET}
+      ALLOWED_DISCORD_IDS: ${ALLOWED_DISCORD_IDS}
+      TZ: ${NOTIFICATION_TZ:-America/Sao_Paulo}
+    ports:
+      - "127.0.0.1:${BACKEND_PORT}:${BACKEND_PORT}"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT}:80"
+    depends_on:
+      - backend
+
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID}
+      BOT_API_SECRET: ${BOT_API_SECRET}
+      BACKEND_URL: http://backend:${BACKEND_PORT}
+      TZ: ${NOTIFICATION_TZ:-America/Sao_Paulo}
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

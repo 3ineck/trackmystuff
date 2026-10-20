@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { isDiscordIdAllowed } from "../env";
 import { prisma } from "../prisma";
 import { requireBotSecret } from "../auth/botAuth";
 
@@ -8,6 +9,7 @@ const DEFAULT_PLAN_COLOR = "#8b5cf6"; // matches DEFAULT_PLAN_ITEM_COLOR on the 
 const discordIdSchema = z.string().regex(/^\d+$/);
 
 async function findUserId(discordId: string): Promise<string | null> {
+  if (!isDiscordIdAllowed(discordId)) return null;
   const user = await prisma.user.findUnique({
     where: { discordId },
     select: { id: true },

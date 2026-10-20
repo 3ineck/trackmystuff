@@ -1,3 +1,4 @@
+import "./lib/asyncErrors";
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -15,6 +16,8 @@ import { botRouter } from "./routes/bot.routes";
 import { startNotificationScheduler } from "./notifications/scheduler";
 
 const app = express();
+
+app.disable("x-powered-by");
 
 app.use(
   cors({
@@ -40,7 +43,11 @@ app.use("/plan-items", planItemsRouter);
 app.use("/notifications", notificationsRouter);
 app.use("/bot", botRouter);
 
-app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
   console.error("Unhandled error:", err);
   res.status(500).json({ error: "internal_error" });
 });

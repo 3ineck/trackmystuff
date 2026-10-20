@@ -1,6 +1,6 @@
 import { Router } from "express";
 import crypto from "crypto";
-import { env } from "../env";
+import { env, isDiscordIdAllowed } from "../env";
 import { prisma } from "../prisma";
 import {
   buildAuthorizeUrl,
@@ -8,7 +8,12 @@ import {
   exchangeCodeForToken,
   fetchDiscordUser,
 } from "../auth/discord";
-import { clearSessionCookie, setSessionCookie } from "../auth/session";
+import {
+  COOKIE_NAME,
+  clearSessionCookie,
+  setSessionCookie,
+  verifySession,
+} from "../auth/session";
 import { requireAuth } from "../auth/middleware";
 
 const STATE_COOKIE = "tms_oauth_state";
@@ -44,6 +49,12 @@ authRouter.get("/callback", async (req, res) => {
     const token = await exchangeCodeForToken(code);
     const discordUser = await fetchDiscordUser(token.access_token);
 
+    if (!isDiscordIdAllowed(discordUser.id)) {
+      console.warn(`Login denied for Discord user ${discordUser.id}`);
+      res.status(403).send("Access denied");
+      return;
+    }
+
     const user = await prisma.user.upsert({
       where: { discordId: discordUser.id },
       update: {
@@ -57,7 +68,7 @@ authRouter.get("/callback", async (req, res) => {
       },
     });
 
-    setSessionCookie(res, user.id);
+    setSessionCookie(res, user.id, user.sessionVersion);
     res.redirect(env.FRONTEND_URL);
   } catch (err) {
     console.error("OAuth callback error:", err);
@@ -78,7 +89,16 @@ authRouter.get("/me", requireAuth, async (req, res) => {
   res.json(user);
 });
 
-authRouter.post("/logout", (_req, res) => {
+authRouter.post("/logout", async (req, res) => {
+  const token = req.cookies?.[COOKIE_NAME];
+  const payload = token ? verifySession(token) : null;
+  if (payload) {
+    // Revokes this token and any other copy of it (all devices).
+    await prisma.user.updateMany({
+      where: { id: payload.userId, sessionVersion: payload.ver },
+      data: { sessionVersion: { increment: 1 } },
+    });
+  }
   clearSessionCookie(res);
   res.json({ ok: true });
 });

@@ -26,6 +26,14 @@ const schema = z.object({
     z.string().default("30 8 * * *"),
   ),
   BOT_API_SECRET: optional(z.string().min(16)),
+  // Comma-separated Discord user IDs allowed to log in, or "*" to allow anyone.
+  ALLOWED_DISCORD_IDS: z
+    .string()
+    .min(1, 'ALLOWED_DISCORD_IDS is required (comma-separated IDs, or "*")')
+    .refine(
+      (v) => v.trim() === "*" || v.split(",").every((id) => /^\d+$/.test(id.trim())),
+      'ALLOWED_DISCORD_IDS must be "*" or comma-separated numeric Discord IDs',
+    ),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -36,3 +44,12 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+const allowedDiscordIds =
+  env.ALLOWED_DISCORD_IDS.trim() === "*"
+    ? null
+    : new Set(env.ALLOWED_DISCORD_IDS.split(",").map((id) => id.trim()));
+
+export function isDiscordIdAllowed(discordId: string): boolean {
+  return allowedDiscordIds === null || allowedDiscordIds.has(discordId);
+}

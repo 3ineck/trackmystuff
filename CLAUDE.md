@@ -19,7 +19,7 @@ Tempore — a personal productivity web app that started as a time tracker and g
 - **Express + Prisma + TS** — simple, well-known. Prisma gives type-safe queries + migrations.
 - **PostgreSQL** — required by the project brief.
 - **Discord OAuth2** — only auth method. Session is a signed JWT in an `HttpOnly` cookie (no Redis needed in dev).
-- **Docker Compose** — three services, dev only. No production images yet.
+- **Docker Compose** — `docker-compose.yml` is dev (source mounted, `tsx watch`, `vite dev`). `docker-compose.prod.yml` builds production images (`Dockerfile` in each service; frontend is a static build behind nginx). The VPS must run the prod file (its `.env` sets `COMPOSE_FILE=docker-compose.prod.yml`). Host nginx config lives in `deploy/nginx/`.
 
 ## Where things live
 
@@ -60,6 +60,17 @@ When you want versioned migration history:
 3. From then on, every schema change = a new `migrate dev` invocation that produces a committed migration file.
 
 Don't mix the two long-term — `db push` ignores the `_prisma_migrations` table and can drift from migration history.
+
+## Auth invariants
+
+- **Login allowlist**: `ALLOWED_DISCORD_IDS` (comma-separated, or `*`) is checked in the OAuth callback, in `requireAuth` on every request, and in the bot routes.
+- **Session revocation**: the JWT carries `ver`, which must equal `User.sessionVersion`. Logout increments it, which kills every token for that user.
+- `/bot/*` is blocked at the host nginx; only the bot container reaches it over the Docker network.
+- Rate limits and security headers (CSP, HSTS, …) are set in `deploy/nginx/tempore.tech.conf`, not in Express.
+
+## Express quirks
+
+- `backend/src/lib/asyncErrors.ts` patches Express 4 so rejected async handlers reach the error middleware instead of crashing Node. It must stay the first import in `server.ts`. Remove it if upgrading to Express 5.
 
 ## DB invariants
 
